@@ -1,0 +1,9 @@
+[package]
+name = "hi"
+version = "0.1.0"
+authors = ["Daniel Ferguson <danielferguson@me.com>"]
+
+[dependencies]
+termion = "1.4.0"
+log = "0.3.8"
+env_logger = "0.3"
