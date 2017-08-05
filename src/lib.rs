@@ -75,26 +75,16 @@ pub mod byte_display {
     ) {
         let scroll = props.scroll;
 
-        let mut bytes = data.chunks(bytes_per_row).skip(scroll);
+        let mut rows = data.chunks(bytes_per_row).skip(scroll);
 
         for i in 0..main_panel_height {
-            if let Some(row) = bytes.next() {
-                let remainder = bytes_per_row - row.len();
-                let s = &mut row.iter()
-                    .map(|b| format!("{:02X}", b))
-                    .collect::<Vec<_>>()
-                    .join(" ");
-
-                for _ in 0..remainder {
-                    s.push_str("   ");
-                }
-
+            if let Some(row) = rows.next() {
                 write!(
                     io,
                     "{}{}{}",
                     cursor::Goto(1, (i + 1) as u16),
                     clear::CurrentLine,
-                    s,
+                    format_row(row, bytes_per_row),
                 ).unwrap();
             } else {
                 write!(
@@ -105,5 +95,19 @@ pub mod byte_display {
                 ).unwrap();
             }
         }
+    }
+
+    fn format_row(row: &[u8], max_row_length: usize) -> String {
+        let remainder = max_row_length - row.len();
+        let mut s = row.iter()
+            .map(|b| format!("{:02X}", b))
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        for _ in 0..remainder {
+            s.push_str("   ");
+        }
+
+        s
     }
 }
