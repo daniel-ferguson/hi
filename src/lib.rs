@@ -34,7 +34,7 @@ pub mod status_bar {
 
     pub fn render<T: Write>(io: &mut T, frame: &Frame, path: &str, state: &State) {
         let message_right = format!("{}", state);
-        let bar = unsafe { String::from_utf8_unchecked(vec![0x20; frame.width as usize]) };
+        let bar = line_of_spaces(frame.width as usize);
 
         let bar_full = format!(
             "{}{}{}{}{}{}{}{}{}",
@@ -50,6 +50,21 @@ pub mod status_bar {
         );
 
         write!(io, "{}{}", cursor::Goto(1, frame.height - 1), bar_full,).unwrap();
+    }
+
+    fn line_of_spaces(len: usize) -> String {
+        unsafe { String::from_utf8_unchecked(vec![0x20; len]) }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::line_of_spaces;
+
+        #[test]
+        fn it_returns_a_string_of_spaces() {
+            assert_eq!(line_of_spaces(0), "");
+            assert_eq!(line_of_spaces(4), "    ");
+        }
     }
 }
 
