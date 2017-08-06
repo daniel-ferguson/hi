@@ -74,7 +74,7 @@ pub mod byte_display {
                     "{}{}{}",
                     cursor::Goto(1, (i + 1) as u16),
                     clear::CurrentLine,
-                    format_row(row, bytes_per_row),
+                    format_row(row),
                 ).unwrap();
             } else {
                 write!(
@@ -87,17 +87,21 @@ pub mod byte_display {
         }
     }
 
-    fn format_row(row: &[u8], max_row_length: usize) -> String {
-        let remainder = max_row_length - row.len();
-        let mut s = row.iter()
+    fn format_row(row: &[u8]) -> String {
+        row.iter()
             .map(|b| format!("{:02X}", b))
             .collect::<Vec<_>>()
-            .join(" ");
+            .join(" ")
+    }
 
-        for _ in 0..remainder {
-            s.push_str("   ");
+    #[cfg(test)]
+    mod tests {
+        use super::format_row;
+
+        #[test]
+        fn it_renders_bytes_as_hex_strings() {
+            let res = format_row(&[0, 1, 15, 255]);
+            assert_eq!(res, "00 01 0F FF");
         }
-
-        s
     }
 }
