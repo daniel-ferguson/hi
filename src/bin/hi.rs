@@ -163,9 +163,14 @@ fn main() {
                         cursor.x += 1;
                     }
                 },
-                Event::Key(Key::Backspace) => if cursor.x > 1 {
+                Event::Key(Key::Backspace) => if cursor.x > 2 {
                     cursor.x -= 1;
-                    write!(stdout, "{} ", termion::cursor::Goto(cursor.x, cursor.y)).unwrap();
+                    write!(
+                        stdout,
+                        "{} {}",
+                        termion::cursor::Left(1),
+                        termion::cursor::Left(1),
+                    ).unwrap();
                 },
                 Event::Key(Key::Ctrl('c')) => {
                     cursor.x = 1;
