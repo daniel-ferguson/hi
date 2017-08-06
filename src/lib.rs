@@ -2,6 +2,8 @@
 extern crate log;
 extern crate termion;
 
+pub mod command_prompt;
+
 pub struct Cursor {
     pub x: u16,
     pub y: u16,

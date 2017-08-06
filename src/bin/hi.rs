@@ -14,6 +14,7 @@ use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 
 use hi::{byte_display, status_bar, Cursor, Frame, State};
+use hi::command_prompt::{CommandMachineEvent, CommandPrompt};
 
 fn main() {
     env_logger::init().unwrap();
@@ -60,6 +61,8 @@ fn main() {
         frame.height - 2,
     );
     stdout.flush().unwrap();
+
+    let mut command_machine = CommandPrompt::new();
 
     for evt in stdin.events() {
         // set panel height to frame height minus status bar and command bar
@@ -147,40 +150,41 @@ fn main() {
                 _ => {}
             },
             State::Prompt => match evt {
-                Event::Key(Key::Char(x)) => match x {
-                    '\n' => {
-                        cursor.x = 1;
-                        write!(
-                            stdout,
-                            "{}{}",
-                            termion::clear::CurrentLine,
-                            termion::cursor::Hide
-                        ).unwrap();
-                        state = State::Wait;
+                Event::Key(x) => {
+                    command_machine = command_machine.step(x);
+                    match command_machine.last_event {
+                        CommandMachineEvent::Reset => {
+                            cursor.x = command_machine.cursor as u16 + 2;
+                            write!(
+                                stdout,
+                                "{}{}",
+                                termion::clear::CurrentLine,
+                                termion::cursor::Hide
+                            ).unwrap();
+                            state = State::Wait;
+                        }
+                        CommandMachineEvent::Update => {
+                            cursor.x = command_machine.cursor as u16 + 2;
+                            write!(
+                                stdout,
+                                "{}{}:{}{}",
+                                termion::cursor::Goto(1, cursor.y),
+                                termion::clear::CurrentLine,
+                                command_machine.text,
+                                termion::cursor::Goto(cursor.x, cursor.y),
+                            ).unwrap();
+                        }
+                        CommandMachineEvent::Execute(_) => {
+                            cursor.x = command_machine.cursor as u16 + 2;
+                            write!(
+                                stdout,
+                                "{}{}",
+                                termion::clear::CurrentLine,
+                                termion::cursor::Hide
+                            ).unwrap();
+                            state = State::Wait;
+                        }
                     }
-                    _ => {
-                        write!(stdout, "{}", x).unwrap();
-                        cursor.x += 1;
-                    }
-                },
-                Event::Key(Key::Backspace) => if cursor.x > 2 {
-                    cursor.x -= 1;
-                    write!(
-                        stdout,
-                        "{} {}",
-                        termion::cursor::Left(1),
-                        termion::cursor::Left(1),
-                    ).unwrap();
-                },
-                Event::Key(Key::Ctrl('c')) => {
-                    cursor.x = 1;
-                    write!(
-                        stdout,
-                        "{}{}",
-                        termion::clear::CurrentLine,
-                        termion::cursor::Hide
-                    ).unwrap();
-                    state = State::Wait;
                 }
                 e => {
                     let message = format!("{:?}", e);
