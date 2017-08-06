@@ -25,12 +25,6 @@ pub struct Frame {
     pub height: u16,
 }
 
-pub struct Properties {
-    pub scroll: usize,
-    pub cursor: Cursor,
-}
-
-
 pub mod status_bar {
     use std::io::Write;
 
@@ -64,17 +58,13 @@ pub mod byte_display {
 
     use termion::{clear, cursor};
 
-    use super::Properties;
-
     pub fn render<T: Write>(
         io: &mut T,
-        props: &mut Properties,
+        scroll: usize,
         data: &mut [u8],
         bytes_per_row: usize,
         main_panel_height: u16,
     ) {
-        let scroll = props.scroll;
-
         let mut rows = data.chunks(bytes_per_row).skip(scroll);
 
         for i in 0..main_panel_height {
