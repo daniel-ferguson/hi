@@ -1,5 +1,7 @@
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate nom;
 extern crate termion;
 
 pub mod command_prompt;

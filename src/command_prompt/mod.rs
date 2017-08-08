@@ -1,14 +1,14 @@
 use termion::event::Key;
 
+pub mod parser;
+pub use self::parser::{Command, CommandParseError as ParseError};
+
+#[derive(Debug)]
 pub enum CommandMachineEvent {
     Reset,
     Update,
     Execute(Command),
-}
-
-#[derive(Debug)]
-pub enum Command {
-    SetWidth(usize),
+    UnknownCommand(String),
 }
 
 pub struct CommandPrompt {
@@ -29,11 +29,15 @@ impl CommandPrompt {
     pub fn step(mut self, key: Key) -> Self {
         match key {
             Key::Char('\n') => {
+                let last_event = match parser::parse_command(&self.text) {
+                    Ok(command) => CommandMachineEvent::Execute(command),
+                    Err(..) => CommandMachineEvent::UnknownCommand(self.text.to_owned()),
+                };
                 self.text.clear();
                 Self {
                     cursor: 0,
                     text: self.text,
-                    last_event: CommandMachineEvent::Reset,
+                    last_event: last_event,
                 }
             }
             Key::Ctrl('c') => {

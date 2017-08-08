@@ -52,7 +52,7 @@ fn main() {
 
     status_bar::render(&mut stdout, &frame, &path, &state);
 
-    let bytes_per_row = 32;
+    let mut bytes_per_row = 32;
     byte_display::render(
         &mut stdout,
         scroll,
@@ -67,8 +67,6 @@ fn main() {
     for evt in stdin.events() {
         // set panel height to frame height minus status bar and command bar
         let main_panel_height = frame.height - 1 - 1;
-        let bytes_per_row = 32;
-
         let evt = evt.unwrap();
 
         match state {
@@ -151,9 +149,10 @@ fn main() {
             },
             State::Prompt => match evt {
                 Event::Key(x) => {
+                    use hi::command_prompt::Command::SetWidth;
                     command_machine = command_machine.step(x);
                     match command_machine.last_event {
-                        CommandMachineEvent::Reset => {
+                        CommandMachineEvent::Reset | CommandMachineEvent::UnknownCommand(..) => {
                             cursor.x = command_machine.cursor as u16 + 2;
                             write!(
                                 stdout,
@@ -174,7 +173,8 @@ fn main() {
                                 termion::cursor::Goto(cursor.x, cursor.y),
                             ).unwrap();
                         }
-                        CommandMachineEvent::Execute(_) => {
+                        CommandMachineEvent::Execute(SetWidth(n)) => {
+                            bytes_per_row = n;
                             cursor.x = command_machine.cursor as u16 + 2;
                             write!(
                                 stdout,
@@ -183,6 +183,16 @@ fn main() {
                                 termion::cursor::Hide
                             ).unwrap();
                             state = State::Wait;
+
+                            let len = bytes.len();
+                            let data = &mut bytes[offset..len];
+                            byte_display::render(
+                                &mut stdout,
+                                scroll,
+                                data,
+                                bytes_per_row,
+                                main_panel_height,
+                            );
                         }
                     }
                 }
