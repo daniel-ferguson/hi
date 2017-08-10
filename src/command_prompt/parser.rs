@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 #[derive(Debug, PartialEq)]
 enum CommandName {
+    Offset,
     Width,
 }
 
@@ -15,6 +16,7 @@ impl FromStr for CommandName {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
+            "o" | "offset" => Ok(CommandName::Offset),
             "w" | "width" => Ok(CommandName::Width),
             _ => Err(CommandParseError),
         }
@@ -23,6 +25,7 @@ impl FromStr for CommandName {
 
 #[derive(Debug, PartialEq)]
 pub enum Command {
+    SetOffset(usize),
     SetWidth(usize),
 }
 
@@ -50,6 +53,16 @@ named!(command_name<&[u8], CommandName>,
            )
        );
 
+named!(command_offset<&[u8], Command>,
+       do_parse!(
+           many0!(whitespace)            >>
+           arg1: usize_digit             >>
+           many0!(whitespace)            >>
+           eof!()                        >>
+           ({ Command::SetOffset(arg1) })
+           )
+       );
+
 named!(command_width<&[u8], Command>,
        do_parse!(
            many0!(whitespace)            >>
@@ -62,6 +75,7 @@ named!(command_width<&[u8], Command>,
 
 named!(pub command<&[u8], Command>,
        switch!(command_name,
+               CommandName::Offset => complete!(command_offset) |
                CommandName::Width => complete!(command_width)
                )
        );
@@ -142,9 +156,12 @@ mod tests {
 
         #[test]
         fn parsing_commands() {
+            assert_parse_ok!(command, Command::SetOffset(32), [b"offset 32", b"o 32"]);
+            assert_parse_ok!(command, Command::SetOffset(0), [b"offset 0", b"o  0"]);
             assert_parse_ok!(command, Command::SetWidth(32), [b"width 32", b"w 32"]);
             assert_parse_ok!(command, Command::SetWidth(0), [b"width 0", b"w  0"]);
             assert_parse_any_error!(command, [b"wdith 3", b"width", b"wid"]);
+            assert_parse_any_error!(command, [b"offest 3", b"offset", b"offse"]);
         }
 
         #[test]
@@ -164,6 +181,23 @@ mod tests {
                     b"\nw",
                     b"\r\nw",
                     b" \r \n w"
+                ]
+            );
+            assert_parse_ok!(
+                command_name,
+                CommandName::Offset,
+                [
+                    b"o",
+                    b"offset",
+                    b" offset",
+                    b"\toffset",
+                    b"\noffset",
+                    b"\r\noffset",
+                    b" \r \n offset",
+                    b"\to",
+                    b"\no",
+                    b"\r\no",
+                    b" \r \n o"
                 ]
             );
 

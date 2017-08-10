@@ -155,7 +155,7 @@ fn main() {
             },
             State::Prompt => match evt {
                 Event::Key(x) => {
-                    use hi::command_prompt::Command::SetWidth;
+                    use hi::command_prompt::Command::{SetOffset, SetWidth};
                     command_machine = command_machine.step(x);
                     match command_machine.last_event {
                         CommandMachineEvent::Reset | CommandMachineEvent::UnknownCommand(..) => {
@@ -199,6 +199,27 @@ fn main() {
                                 stdout,
                                 "{}{}{}",
                                 termion::cursor::Goto(1, frame.height),
+                                termion::clear::CurrentLine,
+                                termion::cursor::Hide
+                            ).unwrap();
+                            state = State::Wait;
+
+                            let len = bytes.len();
+                            let data = &mut bytes[offset..len];
+                            byte_display::render(
+                                &mut stdout,
+                                scroll,
+                                data,
+                                bytes_per_row,
+                                main_panel_height,
+                            );
+                        }
+                        CommandMachineEvent::Execute(SetOffset(n)) => {
+                            offset = n;
+                            cursor.x = command_machine.cursor as u16 + 2;
+                            write!(
+                                stdout,
+                                "{}{}",
                                 termion::clear::CurrentLine,
                                 termion::cursor::Hide
                             ).unwrap();
