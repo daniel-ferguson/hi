@@ -38,8 +38,16 @@ pub mod status_bar {
 
     use super::{Frame, State};
 
-    pub fn render<T: Write>(io: &mut T, frame: &Frame, path: &str, state: &State) {
-        let message_right = format!("{}", state);
+    pub fn render<T: Write>(
+        io: &mut T,
+        frame: &Frame,
+        path: &str,
+        state: &State,
+        offset: usize,
+        scroll: usize,
+        bytes_per_row: usize,
+    ) {
+        let message_right = format!("{}|o:{}|s:{}|w:{}", state, offset, scroll, bytes_per_row,);
         let bar = line_of_spaces(frame.width as usize);
 
         let bar_full = format!(

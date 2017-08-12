@@ -50,8 +50,6 @@ fn main() {
 
     let mut state = State::Wait;
 
-    status_bar::render(&mut stdout, &frame, &path, &state);
-
     let mut bytes_per_row = 32;
     byte_display::render(
         &mut stdout,
@@ -59,6 +57,15 @@ fn main() {
         &mut bytes,
         bytes_per_row,
         frame.height - 2,
+    );
+    status_bar::render(
+        &mut stdout,
+        &frame,
+        &path,
+        &state,
+        offset,
+        scroll,
+        bytes_per_row,
     );
     stdout.flush().unwrap();
 
@@ -132,7 +139,6 @@ fn main() {
                 Event::Key(Key::Char(':')) => {
                     state = State::Prompt;
 
-                    status_bar::render(&mut stdout, &frame, &path, &state);
 
                     let cursor = &mut cursor;
                     cursor.x = 1;
@@ -156,7 +162,8 @@ fn main() {
                             cursor.x = command_machine.cursor as u16 + 2;
                             write!(
                                 stdout,
-                                "{}{}",
+                                "{}{}{}",
+                                termion::cursor::Goto(1, frame.height),
                                 termion::clear::CurrentLine,
                                 termion::cursor::Hide
                             ).unwrap();
@@ -178,7 +185,8 @@ fn main() {
                             cursor.x = command_machine.cursor as u16 + 2;
                             write!(
                                 stdout,
-                                "{}{}",
+                                "{}{}{}",
+                                termion::cursor::Goto(1, frame.height),
                                 termion::clear::CurrentLine,
                                 termion::cursor::Hide
                             ).unwrap();
@@ -202,6 +210,15 @@ fn main() {
                 }
             },
         }
+        status_bar::render(
+            &mut stdout,
+            &frame,
+            &path,
+            &state,
+            offset,
+            scroll,
+            bytes_per_row,
+        );
         stdout.flush().unwrap();
     }
 
