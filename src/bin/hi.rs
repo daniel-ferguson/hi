@@ -107,13 +107,13 @@ fn main() {
                     );
                 },
                 Event::Key(Key::Char('j')) => {
-                    let row_count = bytes.len() / bytes_per_row as usize + 1;
-                    let limit_scroll: usize = row_count - (frame.height as usize - 2) + 40;
-                    if scroll < limit_scroll {
-                        scroll += 1;
-                    }
                     let len = bytes.len();
                     let data = &mut bytes[offset..len];
+
+                    if scroll < max_scroll(frame.height as usize - 2, &data, bytes_per_row) {
+                        scroll += 1;
+                    }
+
                     byte_display::render(
                         &mut stdout,
                         scroll,
@@ -223,4 +223,40 @@ fn main() {
     }
 
     write!(stdout, "{}", termion::cursor::Show).unwrap();
+}
+
+fn max_scroll(height: usize, data: &[u8], width: usize) -> usize {
+    let lines = data.len() / width as usize;
+    if lines > height {
+        lines - height / 2
+    } else {
+        0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod max_scroll {
+        use super::max_scroll;
+
+        #[test]
+        fn it_allows_scrolling_half_a_screen_past_end_of_data() {
+            // data displayed across more rows than height
+            let height = 60;
+            let data: &[u8; 80] = &[0; 80];
+            let width = 1;
+            assert_eq!(max_scroll(height, data, width), 20 + height / 2);
+        }
+
+        #[test]
+        fn it_disables_scroll_when_data_fits_on_one_screen() {
+            // data displayed across fewer rows than height
+            let height = 60;
+            let data: &[u8; 20] = &[0; 20];
+            let width = 1;
+            assert_eq!(max_scroll(height, data, width), 0);
+        }
+    }
 }
