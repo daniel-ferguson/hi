@@ -181,7 +181,19 @@ fn main() {
                             ).unwrap();
                         }
                         CommandMachineEvent::Execute(SetWidth(n)) => {
+                            let anchor = top_left_byte_index(offset, scroll, bytes_per_row);
                             bytes_per_row = n;
+
+                            let mut s = scroll_for_anchor(anchor, offset, bytes_per_row);
+                            let mut o = offset_for_anchor(anchor, offset, bytes_per_row);
+
+                            s += o / bytes_per_row;
+                            o = o % bytes_per_row;
+
+
+                            scroll = s;
+                            offset = o;
+
                             cursor.x = command_machine.cursor as u16 + 2;
                             write!(
                                 stdout,
@@ -223,6 +235,18 @@ fn main() {
     }
 
     write!(stdout, "{}", termion::cursor::Show).unwrap();
+}
+
+fn top_left_byte_index(offset: usize, scroll: usize, bytes_per_row: usize) -> usize {
+    offset + scroll * bytes_per_row
+}
+
+fn scroll_for_anchor(anchor: usize, offset: usize, bytes_per_row: usize) -> usize {
+    (anchor - offset) / bytes_per_row
+}
+
+fn offset_for_anchor(anchor: usize, offset: usize, bytes_per_row: usize) -> usize {
+    offset + (anchor - offset) % bytes_per_row
 }
 
 fn max_scroll(height: usize, data: &[u8], width: usize) -> usize {
