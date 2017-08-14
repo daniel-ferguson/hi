@@ -231,6 +231,8 @@ fn main() {
             scroll,
             bytes_per_row,
         );
+
+        write!(stdout, "{}", termion::cursor::Goto(cursor.x, cursor.y)).unwrap();
         stdout.flush().unwrap();
     }
 
