@@ -90,7 +90,7 @@ pub mod byte_display {
     pub fn render<T: Write>(
         io: &mut T,
         scroll: usize,
-        data: &mut [u8],
+        data: &[u8],
         bytes_per_row: usize,
         main_panel_height: u16,
     ) {

@@ -51,13 +51,7 @@ fn main() {
     let mut state = State::Wait;
 
     let mut bytes_per_row = 32;
-    byte_display::render(
-        &mut stdout,
-        scroll,
-        &mut bytes,
-        bytes_per_row,
-        frame.height - 2,
-    );
+    byte_display::render(&mut stdout, scroll, &bytes, bytes_per_row, frame.height - 2);
     status_bar::render(
         &mut stdout,
         &frame,
@@ -85,7 +79,7 @@ fn main() {
                 Event::Key(Key::Char('h')) => if offset > 0 {
                     offset -= 1;
                     let len = bytes.len();
-                    let data = &mut bytes[offset..len];
+                    let data = &bytes[offset..len];
                     byte_display::render(
                         &mut stdout,
                         scroll,
@@ -97,7 +91,7 @@ fn main() {
                 Event::Key(Key::Char('l')) => if offset < bytes.len() - 1 {
                     offset += 1;
                     let len = bytes.len();
-                    let data = &mut bytes[offset..len];
+                    let data = &bytes[offset..len];
                     byte_display::render(
                         &mut stdout,
                         scroll,
@@ -108,7 +102,7 @@ fn main() {
                 },
                 Event::Key(Key::Char('j')) => {
                     let len = bytes.len();
-                    let data = &mut bytes[offset..len];
+                    let data = &bytes[offset..len];
 
                     if scroll < max_scroll(frame.height as usize - 2, &data, bytes_per_row) {
                         scroll += 1;
@@ -127,7 +121,7 @@ fn main() {
                         scroll -= 1;
                     }
                     let len = bytes.len();
-                    let data = &mut bytes[offset..len];
+                    let data = &bytes[offset..len];
                     byte_display::render(
                         &mut stdout,
                         scroll,
@@ -205,7 +199,7 @@ fn main() {
                             state = State::Wait;
 
                             let len = bytes.len();
-                            let data = &mut bytes[offset..len];
+                            let data = &bytes[offset..len];
                             byte_display::render(
                                 &mut stdout,
                                 scroll,
@@ -226,7 +220,7 @@ fn main() {
                             state = State::Wait;
 
                             let len = bytes.len();
-                            let data = &mut bytes[offset..len];
+                            let data = &bytes[offset..len];
                             byte_display::render(
                                 &mut stdout,
                                 scroll,
