@@ -13,14 +13,14 @@ pub enum CommandMachineEvent {
 
 pub struct CommandPrompt {
     pub text: String,
-    pub cursor: usize,
+    pub index: usize,
     pub last_event: CommandMachineEvent,
 }
 
 impl CommandPrompt {
     pub fn new() -> Self {
         Self {
-            cursor: 0,
+            index: 0,
             text: String::new(),
             last_event: CommandMachineEvent::Reset,
         }
@@ -35,7 +35,7 @@ impl CommandPrompt {
                 };
                 self.text.clear();
                 Self {
-                    cursor: 0,
+                    index: 0,
                     text: self.text,
                     last_event: last_event,
                 }
@@ -43,7 +43,7 @@ impl CommandPrompt {
             Key::Ctrl('c') => {
                 self.text.clear();
                 Self {
-                    cursor: 0,
+                    index: 0,
                     text: self.text,
                     last_event: CommandMachineEvent::Reset,
                 }
@@ -51,21 +51,21 @@ impl CommandPrompt {
             Key::Char(x) => {
                 self.text.push(x);
                 Self {
-                    cursor: self.cursor + 1,
+                    index: self.index + 1,
                     text: self.text,
                     last_event: CommandMachineEvent::Update,
                 }
             }
-            Key::Backspace => if self.cursor > 0 {
-                self.text.remove(self.cursor - 1);
+            Key::Backspace => if self.index > 0 {
+                self.text.remove(self.index - 1);
                 Self {
-                    cursor: self.cursor - 1,
+                    index: self.index - 1,
                     text: self.text,
                     last_event: CommandMachineEvent::Update,
                 }
             } else {
                 Self {
-                    cursor: self.cursor,
+                    index: self.index,
                     text: self.text,
                     last_event: CommandMachineEvent::Update,
                 }
@@ -90,16 +90,16 @@ mod tests {
         let command = command.step(Key::Char('o'));
 
         assert_eq!(command.text, "hello");
-        assert_eq!(command.cursor, 5);
+        assert_eq!(command.index, 5);
     }
 
     #[test]
-    fn it_keeps_track_of_cursor_position() {
+    fn it_keeps_track_of_index() {
         let command = CommandPrompt::new();
         let command = command.step(Key::Char('h'));
-        assert_eq!(command.cursor, 1);
+        assert_eq!(command.index, 1);
         let command = command.step(Key::Char('i'));
-        assert_eq!(command.cursor, 2);
+        assert_eq!(command.index, 2);
     }
 
     #[test]
@@ -109,11 +109,11 @@ mod tests {
         let command = command.step(Key::Char('i'));
 
         let command = command.step(Key::Backspace);
-        assert_eq!(command.cursor, 1);
+        assert_eq!(command.index, 1);
         assert_eq!(command.text, "h");
 
         let command = command.step(Key::Backspace);
-        assert_eq!(command.cursor, 0);
+        assert_eq!(command.index, 0);
         assert_eq!(command.text, "");
     }
 
@@ -121,7 +121,7 @@ mod tests {
     fn it_does_nothing_when_backspacing_past_the_start_of_text() {
         let command = CommandPrompt::new();
         let command = command.step(Key::Backspace);
-        assert_eq!(command.cursor, 0);
+        assert_eq!(command.index, 0);
         assert_eq!(command.text, "");
     }
 }

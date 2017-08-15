@@ -80,6 +80,17 @@ fn main() {
                     offset -= 1;
                     let len = bytes.len();
                     let data = &bytes[offset..len];
+
+                    status_bar::render(
+                        &mut stdout,
+                        &frame,
+                        &path,
+                        &state,
+                        offset,
+                        scroll,
+                        bytes_per_row,
+                    );
+
                     byte_display::render(
                         &mut stdout,
                         scroll,
@@ -92,6 +103,17 @@ fn main() {
                     offset += 1;
                     let len = bytes.len();
                     let data = &bytes[offset..len];
+
+                    status_bar::render(
+                        &mut stdout,
+                        &frame,
+                        &path,
+                        &state,
+                        offset,
+                        scroll,
+                        bytes_per_row,
+                    );
+
                     byte_display::render(
                         &mut stdout,
                         scroll,
@@ -108,6 +130,16 @@ fn main() {
                         scroll += 1;
                     }
 
+                    status_bar::render(
+                        &mut stdout,
+                        &frame,
+                        &path,
+                        &state,
+                        offset,
+                        scroll,
+                        bytes_per_row,
+                    );
+
                     byte_display::render(
                         &mut stdout,
                         scroll,
@@ -120,6 +152,17 @@ fn main() {
                     if scroll > 0 {
                         scroll -= 1;
                     }
+
+                    status_bar::render(
+                        &mut stdout,
+                        &frame,
+                        &path,
+                        &state,
+                        offset,
+                        scroll,
+                        bytes_per_row,
+                    );
+
                     let len = bytes.len();
                     let data = &bytes[offset..len];
                     byte_display::render(
@@ -137,6 +180,7 @@ fn main() {
                     let cursor = &mut cursor;
                     cursor.x = 1;
                     cursor.y = frame.height;
+
                     write!(
                         stdout,
                         "{}{}:",
@@ -158,6 +202,16 @@ fn main() {
                         scroll = max_scroll(byte_display_height, &data, bytes_per_row);
                     }
 
+                    status_bar::render(
+                        &mut stdout,
+                        &frame,
+                        &path,
+                        &state,
+                        offset,
+                        scroll,
+                        bytes_per_row,
+                    );
+
                     byte_display::render(
                         &mut stdout,
                         scroll,
@@ -175,6 +229,16 @@ fn main() {
                         scroll -= byte_display_height;
                     }
 
+                    status_bar::render(
+                        &mut stdout,
+                        &frame,
+                        &path,
+                        &state,
+                        offset,
+                        scroll,
+                        bytes_per_row,
+                    );
+
                     let len = bytes.len();
                     let data = &bytes[offset..len];
                     byte_display::render(
@@ -191,6 +255,16 @@ fn main() {
                     let len = bytes.len();
                     let data = &bytes[offset..len];
 
+                    status_bar::render(
+                        &mut stdout,
+                        &frame,
+                        &path,
+                        &state,
+                        offset,
+                        scroll,
+                        bytes_per_row,
+                    );
+
                     byte_display::render(
                         &mut stdout,
                         scroll,
@@ -204,6 +278,17 @@ fn main() {
                     let data = &bytes[offset..len];
 
                     scroll = max_scroll(frame.height as usize - 2, &data, bytes_per_row);
+
+                    status_bar::render(
+                        &mut stdout,
+                        &frame,
+                        &path,
+                        &state,
+                        offset,
+                        scroll,
+                        bytes_per_row,
+                    );
+
 
                     byte_display::render(
                         &mut stdout,
@@ -221,7 +306,6 @@ fn main() {
                     command_machine = command_machine.step(x);
                     match command_machine.last_event {
                         CommandMachineEvent::Reset | CommandMachineEvent::UnknownCommand(..) => {
-                            cursor.x = command_machine.cursor as u16 + 2;
                             write!(
                                 stdout,
                                 "{}{}{}",
@@ -232,14 +316,12 @@ fn main() {
                             state = State::Wait;
                         }
                         CommandMachineEvent::Update => {
-                            cursor.x = command_machine.cursor as u16 + 2;
                             write!(
                                 stdout,
-                                "{}{}:{}{}",
+                                "{}{}:{}",
                                 termion::cursor::Goto(1, cursor.y),
                                 termion::clear::CurrentLine,
                                 command_machine.text,
-                                termion::cursor::Goto(cursor.x, cursor.y),
                             ).unwrap();
                         }
                         CommandMachineEvent::Execute(SetWidth(n)) => {
@@ -256,7 +338,6 @@ fn main() {
                             scroll = s;
                             offset = o;
 
-                            cursor.x = command_machine.cursor as u16 + 2;
                             write!(
                                 stdout,
                                 "{}{}{}",
@@ -265,6 +346,16 @@ fn main() {
                                 termion::cursor::Hide
                             ).unwrap();
                             state = State::Wait;
+
+                            status_bar::render(
+                                &mut stdout,
+                                &frame,
+                                &path,
+                                &state,
+                                offset,
+                                scroll,
+                                bytes_per_row,
+                            );
 
                             let len = bytes.len();
                             let data = &bytes[offset..len];
@@ -278,7 +369,6 @@ fn main() {
                         }
                         CommandMachineEvent::Execute(SetOffset(n)) => {
                             offset = n;
-                            cursor.x = command_machine.cursor as u16 + 2;
                             write!(
                                 stdout,
                                 "{}{}",
@@ -286,6 +376,16 @@ fn main() {
                                 termion::cursor::Hide
                             ).unwrap();
                             state = State::Wait;
+
+                            status_bar::render(
+                                &mut stdout,
+                                &frame,
+                                &path,
+                                &state,
+                                offset,
+                                scroll,
+                                bytes_per_row,
+                            );
 
                             let len = bytes.len();
                             let data = &bytes[offset..len];
@@ -305,17 +405,7 @@ fn main() {
                 }
             },
         }
-        status_bar::render(
-            &mut stdout,
-            &frame,
-            &path,
-            &state,
-            offset,
-            scroll,
-            bytes_per_row,
-        );
 
-        write!(stdout, "{}", termion::cursor::Goto(cursor.x, cursor.y)).unwrap();
         stdout.flush().unwrap();
     }
 
