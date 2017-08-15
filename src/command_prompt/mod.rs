@@ -70,7 +70,7 @@ impl CommandPrompt {
                     last_event: CommandMachineEvent::Update,
                 }
             },
-            _ => panic!("oh no"),
+            _ => self,
         }
     }
 }
