@@ -1,4 +1,4 @@
 - [ ] Extract command bar rendering into a separate function
-- [ ] Implement better navigation (jump to line, set bytes per row, page up, page down etc.)
 - [ ] Fix display when terminal narrower than byte width
+- [x] Implement better navigation (jump to line, set bytes per row, page up, page down etc.)
 - [x] Remove Properties struct, unpack into arguments

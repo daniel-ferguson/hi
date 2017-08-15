@@ -145,6 +145,74 @@ fn main() {
                     ).unwrap();
                     cursor.x += 1;
                 }
+                Event::Key(Key::Ctrl('d')) | Event::Key(Key::PageDown) => {
+                    let byte_display_height = frame.height as usize - 2;
+                    let len = bytes.len();
+                    let data = &bytes[offset..len];
+
+                    if scroll + byte_display_height
+                        < max_scroll(byte_display_height, &data, bytes_per_row)
+                    {
+                        scroll += byte_display_height;
+                    } else {
+                        scroll = max_scroll(byte_display_height, &data, bytes_per_row);
+                    }
+
+                    byte_display::render(
+                        &mut stdout,
+                        scroll,
+                        data,
+                        bytes_per_row,
+                        main_panel_height,
+                    );
+                }
+                Event::Key(Key::Ctrl('u')) | Event::Key(Key::PageUp) => {
+                    let byte_display_height = frame.height as usize - 2;
+
+                    if byte_display_height > scroll {
+                        scroll = 0;
+                    } else {
+                        scroll -= byte_display_height;
+                    }
+
+                    let len = bytes.len();
+                    let data = &bytes[offset..len];
+                    byte_display::render(
+                        &mut stdout,
+                        scroll,
+                        data,
+                        bytes_per_row,
+                        main_panel_height,
+                    );
+                }
+                Event::Key(Key::Home) => {
+                    scroll = 0;
+
+                    let len = bytes.len();
+                    let data = &bytes[offset..len];
+
+                    byte_display::render(
+                        &mut stdout,
+                        scroll,
+                        data,
+                        bytes_per_row,
+                        main_panel_height,
+                    );
+                }
+                Event::Key(Key::End) => {
+                    let len = bytes.len();
+                    let data = &bytes[offset..len];
+
+                    scroll = max_scroll(frame.height as usize - 2, &data, bytes_per_row);
+
+                    byte_display::render(
+                        &mut stdout,
+                        scroll,
+                        data,
+                        bytes_per_row,
+                        main_panel_height,
+                    );
+                }
                 _ => {}
             },
             State::Prompt => match evt {
