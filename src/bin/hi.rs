@@ -70,6 +70,7 @@ fn main() {
         let main_panel_height = frame.height - 1 - 1;
         let evt = evt.unwrap();
         let mut byte_display_dirty = false;
+        let mut status_bar_dirty = false;
 
         match state {
             State::Wait => match evt {
@@ -80,31 +81,13 @@ fn main() {
                 Event::Key(Key::Char('h')) => if offset > 0 {
                     offset -= 1;
 
-                    status_bar::render(
-                        &mut stdout,
-                        &frame,
-                        &path,
-                        &state,
-                        offset,
-                        scroll,
-                        bytes_per_row,
-                    );
-
+                    status_bar_dirty = true;
                     byte_display_dirty = true;
                 },
                 Event::Key(Key::Char('l')) => if offset < bytes.len() - 1 {
                     offset += 1;
 
-                    status_bar::render(
-                        &mut stdout,
-                        &frame,
-                        &path,
-                        &state,
-                        offset,
-                        scroll,
-                        bytes_per_row,
-                    );
-
+                    status_bar_dirty = true;
                     byte_display_dirty = true;
                 },
                 Event::Key(Key::Char('j')) => {
@@ -115,16 +98,7 @@ fn main() {
                         scroll += 1;
                     }
 
-                    status_bar::render(
-                        &mut stdout,
-                        &frame,
-                        &path,
-                        &state,
-                        offset,
-                        scroll,
-                        bytes_per_row,
-                    );
-
+                    status_bar_dirty = true;
                     byte_display_dirty = true;
                 }
                 Event::Key(Key::Char('k')) => if scroll > 0 {
@@ -132,21 +106,11 @@ fn main() {
                         scroll -= 1;
                     }
 
-                    status_bar::render(
-                        &mut stdout,
-                        &frame,
-                        &path,
-                        &state,
-                        offset,
-                        scroll,
-                        bytes_per_row,
-                    );
-
+                    status_bar_dirty = true;
                     byte_display_dirty = true;
                 },
                 Event::Key(Key::Char(':')) => {
                     state = State::Prompt;
-
 
                     let cursor = &mut cursor;
                     cursor.x = 1;
@@ -173,16 +137,7 @@ fn main() {
                         scroll = max_scroll(byte_display_height, &data, bytes_per_row);
                     }
 
-                    status_bar::render(
-                        &mut stdout,
-                        &frame,
-                        &path,
-                        &state,
-                        offset,
-                        scroll,
-                        bytes_per_row,
-                    );
-
+                    status_bar_dirty = true;
                     byte_display_dirty = true;
                 }
                 Event::Key(Key::Ctrl('u')) | Event::Key(Key::PageUp) => {
@@ -194,31 +149,13 @@ fn main() {
                         scroll -= byte_display_height;
                     }
 
-                    status_bar::render(
-                        &mut stdout,
-                        &frame,
-                        &path,
-                        &state,
-                        offset,
-                        scroll,
-                        bytes_per_row,
-                    );
-
+                    status_bar_dirty = true;
                     byte_display_dirty = true;
                 }
                 Event::Key(Key::Home) => {
                     scroll = 0;
 
-                    status_bar::render(
-                        &mut stdout,
-                        &frame,
-                        &path,
-                        &state,
-                        offset,
-                        scroll,
-                        bytes_per_row,
-                    );
-
+                    status_bar_dirty = true;
                     byte_display_dirty = true;
                 }
                 Event::Key(Key::End) => {
@@ -227,17 +164,7 @@ fn main() {
 
                     scroll = max_scroll(frame.height as usize - 2, &data, bytes_per_row);
 
-                    status_bar::render(
-                        &mut stdout,
-                        &frame,
-                        &path,
-                        &state,
-                        offset,
-                        scroll,
-                        bytes_per_row,
-                    );
-
-
+                    status_bar_dirty = true;
                     byte_display_dirty = true;
                 }
                 _ => {}
@@ -289,16 +216,7 @@ fn main() {
                             ).unwrap();
                             state = State::Wait;
 
-                            status_bar::render(
-                                &mut stdout,
-                                &frame,
-                                &path,
-                                &state,
-                                offset,
-                                scroll,
-                                bytes_per_row,
-                            );
-
+                            status_bar_dirty = true;
                             byte_display_dirty = true;
                         }
                         CommandMachineEvent::Execute(SetOffset(n)) => {
@@ -311,16 +229,7 @@ fn main() {
                             ).unwrap();
                             state = State::Wait;
 
-                            status_bar::render(
-                                &mut stdout,
-                                &frame,
-                                &path,
-                                &state,
-                                offset,
-                                scroll,
-                                bytes_per_row,
-                            );
-
+                            status_bar_dirty = true;
                             byte_display_dirty = true;
                         }
                     }
@@ -330,6 +239,18 @@ fn main() {
                     info!("{}", message);
                 }
             },
+        }
+
+        if status_bar_dirty {
+            status_bar::render(
+                &mut stdout,
+                &frame,
+                &path,
+                &state,
+                offset,
+                scroll,
+                bytes_per_row,
+            );
         }
 
         if byte_display_dirty {
