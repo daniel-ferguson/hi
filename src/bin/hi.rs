@@ -69,6 +69,7 @@ fn main() {
         // set panel height to frame height minus status bar and command bar
         let main_panel_height = frame.height - 1 - 1;
         let evt = evt.unwrap();
+        let mut byte_display_dirty = false;
 
         match state {
             State::Wait => match evt {
@@ -78,8 +79,6 @@ fn main() {
                 }
                 Event::Key(Key::Char('h')) => if offset > 0 {
                     offset -= 1;
-                    let len = bytes.len();
-                    let data = &bytes[offset..len];
 
                     status_bar::render(
                         &mut stdout,
@@ -91,18 +90,10 @@ fn main() {
                         bytes_per_row,
                     );
 
-                    byte_display::render(
-                        &mut stdout,
-                        scroll,
-                        data,
-                        bytes_per_row,
-                        main_panel_height,
-                    );
+                    byte_display_dirty = true;
                 },
                 Event::Key(Key::Char('l')) => if offset < bytes.len() - 1 {
                     offset += 1;
-                    let len = bytes.len();
-                    let data = &bytes[offset..len];
 
                     status_bar::render(
                         &mut stdout,
@@ -114,13 +105,7 @@ fn main() {
                         bytes_per_row,
                     );
 
-                    byte_display::render(
-                        &mut stdout,
-                        scroll,
-                        data,
-                        bytes_per_row,
-                        main_panel_height,
-                    );
+                    byte_display_dirty = true;
                 },
                 Event::Key(Key::Char('j')) => {
                     let len = bytes.len();
@@ -140,13 +125,7 @@ fn main() {
                         bytes_per_row,
                     );
 
-                    byte_display::render(
-                        &mut stdout,
-                        scroll,
-                        data,
-                        bytes_per_row,
-                        main_panel_height,
-                    );
+                    byte_display_dirty = true;
                 }
                 Event::Key(Key::Char('k')) => if scroll > 0 {
                     if scroll > 0 {
@@ -163,15 +142,7 @@ fn main() {
                         bytes_per_row,
                     );
 
-                    let len = bytes.len();
-                    let data = &bytes[offset..len];
-                    byte_display::render(
-                        &mut stdout,
-                        scroll,
-                        data,
-                        bytes_per_row,
-                        main_panel_height,
-                    );
+                    byte_display_dirty = true;
                 },
                 Event::Key(Key::Char(':')) => {
                     state = State::Prompt;
@@ -212,13 +183,7 @@ fn main() {
                         bytes_per_row,
                     );
 
-                    byte_display::render(
-                        &mut stdout,
-                        scroll,
-                        data,
-                        bytes_per_row,
-                        main_panel_height,
-                    );
+                    byte_display_dirty = true;
                 }
                 Event::Key(Key::Ctrl('u')) | Event::Key(Key::PageUp) => {
                     let byte_display_height = frame.height as usize - 2;
@@ -239,21 +204,10 @@ fn main() {
                         bytes_per_row,
                     );
 
-                    let len = bytes.len();
-                    let data = &bytes[offset..len];
-                    byte_display::render(
-                        &mut stdout,
-                        scroll,
-                        data,
-                        bytes_per_row,
-                        main_panel_height,
-                    );
+                    byte_display_dirty = true;
                 }
                 Event::Key(Key::Home) => {
                     scroll = 0;
-
-                    let len = bytes.len();
-                    let data = &bytes[offset..len];
 
                     status_bar::render(
                         &mut stdout,
@@ -265,13 +219,7 @@ fn main() {
                         bytes_per_row,
                     );
 
-                    byte_display::render(
-                        &mut stdout,
-                        scroll,
-                        data,
-                        bytes_per_row,
-                        main_panel_height,
-                    );
+                    byte_display_dirty = true;
                 }
                 Event::Key(Key::End) => {
                     let len = bytes.len();
@@ -290,13 +238,7 @@ fn main() {
                     );
 
 
-                    byte_display::render(
-                        &mut stdout,
-                        scroll,
-                        data,
-                        bytes_per_row,
-                        main_panel_height,
-                    );
+                    byte_display_dirty = true;
                 }
                 _ => {}
             },
@@ -357,15 +299,7 @@ fn main() {
                                 bytes_per_row,
                             );
 
-                            let len = bytes.len();
-                            let data = &bytes[offset..len];
-                            byte_display::render(
-                                &mut stdout,
-                                scroll,
-                                data,
-                                bytes_per_row,
-                                main_panel_height,
-                            );
+                            byte_display_dirty = true;
                         }
                         CommandMachineEvent::Execute(SetOffset(n)) => {
                             offset = n;
@@ -387,15 +321,7 @@ fn main() {
                                 bytes_per_row,
                             );
 
-                            let len = bytes.len();
-                            let data = &bytes[offset..len];
-                            byte_display::render(
-                                &mut stdout,
-                                scroll,
-                                data,
-                                bytes_per_row,
-                                main_panel_height,
-                            );
+                            byte_display_dirty = true;
                         }
                     }
                 }
@@ -404,6 +330,12 @@ fn main() {
                     info!("{}", message);
                 }
             },
+        }
+
+        if byte_display_dirty {
+            let len = bytes.len();
+            let data = &bytes[offset..len];
+            byte_display::render(&mut stdout, scroll, data, bytes_per_row, main_panel_height);
         }
 
         stdout.flush().unwrap();
