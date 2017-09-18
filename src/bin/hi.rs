@@ -13,7 +13,7 @@ use termion::event::{Event, Key};
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 
-use hi::{byte_display, status_bar, Cursor, Frame, State};
+use hi::{byte_display, status_bar, Frame, State};
 use hi::command_prompt::{CommandMachineEvent, CommandPrompt};
 
 fn main() {
@@ -25,7 +25,6 @@ fn main() {
     file.read_to_end(&mut bytes).unwrap();
 
     let mut scroll = 0;
-    let mut cursor = Cursor { x: 1, y: 1 };
 
     let stdin = stdin();
     let mut stdout = stdout().into_raw_mode().unwrap();
@@ -71,6 +70,8 @@ fn main() {
         let evt = evt.unwrap();
         let mut byte_display_dirty = false;
         let mut status_bar_dirty = false;
+        let mut command_bar_dirty = false;
+        let mut command_bar_focus = false;
 
         match state {
             State::Wait => match evt {
@@ -112,17 +113,7 @@ fn main() {
                 Event::Key(Key::Char(':')) => {
                     state = State::Prompt;
 
-                    let cursor = &mut cursor;
-                    cursor.x = 1;
-                    cursor.y = frame.height;
-
-                    write!(
-                        stdout,
-                        "{}{}:",
-                        termion::cursor::Goto(cursor.x, cursor.y),
-                        termion::cursor::Show
-                    ).unwrap();
-                    cursor.x += 1;
+                    command_bar_focus = true;
                 }
                 Event::Key(Key::Ctrl('d')) | Event::Key(Key::PageDown) => {
                     let byte_display_height = frame.height as usize - 2;
@@ -171,28 +162,14 @@ fn main() {
             },
             State::Prompt => match evt {
                 Event::Key(x) => {
+                    command_bar_dirty = true;
                     use hi::command_prompt::Command::{SetOffset, SetWidth};
                     command_machine = command_machine.step(x);
                     match command_machine.last_event {
                         CommandMachineEvent::Reset | CommandMachineEvent::UnknownCommand(..) => {
-                            write!(
-                                stdout,
-                                "{}{}{}",
-                                termion::cursor::Goto(1, frame.height),
-                                termion::clear::CurrentLine,
-                                termion::cursor::Hide
-                            ).unwrap();
                             state = State::Wait;
                         }
-                        CommandMachineEvent::Update => {
-                            write!(
-                                stdout,
-                                "{}{}:{}",
-                                termion::cursor::Goto(1, cursor.y),
-                                termion::clear::CurrentLine,
-                                command_machine.text,
-                            ).unwrap();
-                        }
+                        CommandMachineEvent::Update => {}
                         CommandMachineEvent::Execute(SetWidth(n)) => {
                             let anchor = top_left_byte_index(offset, scroll, bytes_per_row);
                             bytes_per_row = n;
@@ -200,19 +177,11 @@ fn main() {
                             let s = scroll_for_anchor(anchor, offset, bytes_per_row);
                             let o = offset_for_anchor(anchor, offset, bytes_per_row);
 
-
                             let (s, o) = balance_offset_and_scroll(s, o, bytes_per_row);
 
                             scroll = s;
                             offset = o;
 
-                            write!(
-                                stdout,
-                                "{}{}{}",
-                                termion::cursor::Goto(1, frame.height),
-                                termion::clear::CurrentLine,
-                                termion::cursor::Hide
-                            ).unwrap();
                             state = State::Wait;
 
                             status_bar_dirty = true;
@@ -220,12 +189,6 @@ fn main() {
                         }
                         CommandMachineEvent::Execute(SetOffset(n)) => {
                             offset = n;
-                            write!(
-                                stdout,
-                                "{}{}",
-                                termion::clear::CurrentLine,
-                                termion::cursor::Hide
-                            ).unwrap();
                             state = State::Wait;
 
                             status_bar_dirty = true;
@@ -240,6 +203,12 @@ fn main() {
             },
         }
 
+        if byte_display_dirty {
+            let len = bytes.len();
+            let data = &bytes[offset..len];
+            byte_display::render(&mut stdout, scroll, data, bytes_per_row, main_panel_height);
+        }
+
         if status_bar_dirty {
             status_bar::render(
                 &mut stdout,
@@ -252,10 +221,39 @@ fn main() {
             );
         }
 
-        if byte_display_dirty {
-            let len = bytes.len();
-            let data = &bytes[offset..len];
-            byte_display::render(&mut stdout, scroll, data, bytes_per_row, main_panel_height);
+        use CommandMachineEvent::{Execute, Reset, Update};
+        if command_bar_dirty {
+            match command_machine.last_event {
+                Reset | Execute(_) | CommandMachineEvent::UnknownCommand(_) => {
+                    write!(
+                        stdout,
+                        "{}{}{}",
+                        termion::cursor::Goto(1, frame.height),
+                        termion::clear::CurrentLine,
+                        termion::cursor::Hide
+                    ).unwrap();
+                }
+                Update => {
+                    write!(
+                        stdout,
+                        "{}{}{}:{}",
+                        termion::cursor::Show,
+                        termion::cursor::Goto(1, frame.height),
+                        termion::clear::CurrentLine,
+                        command_machine.text,
+                    ).unwrap();
+                }
+            }
+        }
+
+        if command_bar_focus {
+            write!(
+                stdout,
+                "{}{}{}:",
+                termion::cursor::Show,
+                termion::cursor::Goto(1, frame.height),
+                termion::clear::CurrentLine,
+            ).unwrap();
         }
 
         stdout.flush().unwrap();
