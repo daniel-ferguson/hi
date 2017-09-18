@@ -197,12 +197,11 @@ fn main() {
                             let anchor = top_left_byte_index(offset, scroll, bytes_per_row);
                             bytes_per_row = n;
 
-                            let mut s = scroll_for_anchor(anchor, offset, bytes_per_row);
-                            let mut o = offset_for_anchor(anchor, offset, bytes_per_row);
+                            let s = scroll_for_anchor(anchor, offset, bytes_per_row);
+                            let o = offset_for_anchor(anchor, offset, bytes_per_row);
 
-                            s += o / bytes_per_row;
-                            o = o % bytes_per_row;
 
+                            let (s, o) = balance_offset_and_scroll(s, o, bytes_per_row);
 
                             scroll = s;
                             offset = o;
@@ -263,6 +262,12 @@ fn main() {
     }
 
     write!(stdout, "{}", termion::cursor::Show).unwrap();
+}
+
+fn balance_offset_and_scroll(scroll: usize, offset: usize, bytes_per_row: usize) -> (usize, usize) {
+    let scroll = scroll + offset / bytes_per_row;
+    let offset = offset % bytes_per_row;
+    (scroll, offset)
 }
 
 fn top_left_byte_index(offset: usize, scroll: usize, bytes_per_row: usize) -> usize {
