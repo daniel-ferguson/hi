@@ -34,7 +34,6 @@ named!(
     alt!(tag!(" ") | tag!("\t") | tag!("\r") | tag!("\n"))
 );
 
-
 named!(numeric_string<&str>, map_res!(digit, ::std::str::from_utf8));
 
 named!(
@@ -151,8 +150,8 @@ mod tests {
 
     use super::*;
     mod command {
-        use super::{command, command_name, usize_digit};
         use super::{Command, CommandName};
+        use super::{command, command_name, usize_digit};
 
         #[test]
         fn parsing_commands() {

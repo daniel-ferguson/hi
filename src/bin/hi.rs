@@ -4,17 +4,17 @@ extern crate hi;
 extern crate log;
 extern crate termion;
 
-use std::io::{stdin, stdout, Write};
 use std::env;
 use std::fs;
 use std::io::Read;
+use std::io::{stdin, stdout, Write};
 
 use termion::event::{Event, Key};
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 
-use hi::{byte_display, status_bar, Frame, State};
 use hi::command_prompt::{CommandMachineEvent, CommandPrompt};
+use hi::{byte_display, status_bar, Frame, State};
 
 fn main() {
     env_logger::init().unwrap();
