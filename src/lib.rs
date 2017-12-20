@@ -5,26 +5,9 @@ extern crate nom;
 extern crate termion;
 
 pub mod command_prompt;
-
-#[derive(Debug)]
-pub enum State {
-    Wait,
-    Prompt,
-}
-
-impl std::fmt::Display for State {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match *self {
-            State::Wait => write!(f, "State::Wait"),
-            State::Prompt => write!(f, "State::Prompt"),
-        }
-    }
-}
-
-pub struct Frame {
-    pub width: u16,
-    pub height: u16,
-}
+pub mod screen;
+pub use screen::Frame;
+pub use screen::State;
 
 pub mod status_bar {
     use std::io::Write;
