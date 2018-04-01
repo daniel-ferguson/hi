@@ -14,34 +14,34 @@ pub mod status_bar {
 
     use termion::{color, cursor};
 
-    use super::{Frame, State};
+    use super::screen::Screen;
 
-    pub fn render<T: Write>(
-        io: &mut T,
-        frame: &Frame,
-        path: &str,
-        state: &State,
-        offset: usize,
-        scroll: usize,
-        bytes_per_row: usize,
-    ) {
-        let message_right = format!("{}|o:{}|s:{}|w:{}", state, offset, scroll, bytes_per_row,);
-        let bar = line_of_spaces(frame.width as usize);
+    pub fn render<T: Write>(io: &mut T, screen: &Screen, path: &str) {
+        let message_right = format!(
+            "{}|o:{}|s:{}|w:{}",
+            &screen.state, screen.offset, screen.scroll, screen.bytes_per_row
+        );
+        let bar = line_of_spaces(screen.status_bar_dimensions().width as usize);
+
+        let status_bar_position = screen.status_bar_position();
 
         let bar_full = format!(
             "{}{}{}{}{}{}{}{}{}",
             color::Bg(color::Black),
             color::Fg(color::White),
             bar,
-            cursor::Goto(1, frame.height - 1),
+            cursor::Goto(status_bar_position.x, status_bar_position.y),
             path,
-            cursor::Goto((bar.len() - message_right.len()) as u16, frame.height - 1),
+            cursor::Goto(
+                (bar.len() - message_right.len()) as u16,
+                status_bar_position.y
+            ),
             message_right,
             color::Bg(color::Reset),
             color::Fg(color::Reset),
         );
 
-        write!(io, "{}{}", cursor::Goto(1, frame.height - 1), bar_full,).unwrap();
+        write!(io, "{}{}", cursor::Goto(1, status_bar_position.y), bar_full,).unwrap();
     }
 
     fn line_of_spaces(len: usize) -> String {

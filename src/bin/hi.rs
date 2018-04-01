@@ -54,15 +54,7 @@ fn main() {
         screen.bytes_per_row,
         screen.data_frame_height(),
     );
-    status_bar::render(
-        &mut stdout,
-        &screen.frame,
-        &path,
-        &screen.state,
-        screen.offset,
-        screen.scroll,
-        screen.bytes_per_row,
-    );
+    status_bar::render(&mut stdout, &screen, &path);
     stdout.flush().unwrap();
 
     let mut command_machine = CommandPrompt::new();
@@ -125,15 +117,7 @@ fn main() {
         }
 
         if screen.status_bar_dirty {
-            status_bar::render(
-                &mut stdout,
-                &screen.frame,
-                &path,
-                &screen.state,
-                screen.offset,
-                screen.scroll,
-                screen.bytes_per_row,
-            );
+            status_bar::render(&mut stdout, &screen, &path);
         }
 
         use CommandMachineEvent::{Execute, Reset, Update};

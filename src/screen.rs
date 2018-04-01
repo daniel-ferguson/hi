@@ -32,6 +32,16 @@ pub struct Screen<'a> {
     pub data: &'a [u8],
 }
 
+pub struct Point {
+    pub x: u16,
+    pub y: u16,
+}
+
+pub struct Dimension {
+    pub width: u16,
+    pub height: u16,
+}
+
 impl<'a> Screen<'a> {
     pub fn new(data: &'a [u8], frame: Frame) -> Screen {
         Screen {
@@ -57,6 +67,20 @@ impl<'a> Screen<'a> {
 
     pub fn data_frame_height(&self) -> u16 {
         self.frame.height - Self::status_bar_height() - Self::prompt_height()
+    }
+
+    pub fn status_bar_position(&self) -> Point {
+        Point {
+            x: 1,
+            y: self.frame.height - Self::prompt_height(),
+        }
+    }
+
+    pub fn status_bar_dimensions(&self) -> Dimension {
+        Dimension {
+            width: self.frame.width,
+            height: Self::status_bar_height(),
+        }
     }
 
     pub fn left(&mut self) {
