@@ -116,7 +116,12 @@ pub mod line {
         }
 
         pub fn format(&mut self, bytes: &[u8]) -> &str {
-            let formatted_length = bytes.len() * 2 + bytes.len() - 1;
+            let formatted_length = if bytes.len() == 0 {
+                0
+            } else {
+                bytes.len() * 2 + bytes.len() - 1
+            };
+
             assert!(formatted_length <= self.length);
 
             self.text.clear();
@@ -162,6 +167,13 @@ pub mod line {
             let mut line = Line::new(10);
 
             assert_eq!(line.format(&[129, 0]), "81 00     ");
+        }
+
+        #[test]
+        fn format_works_when_given_an_empty_slice() {
+            let mut line = Line::new(0);
+
+            assert_eq!(line.format(&[]), "");
         }
 
         #[test]
