@@ -63,6 +63,7 @@ pub mod status_bar {
 pub mod byte_display {
     use std::io::Write;
 
+    use super::line::Line;
     use super::screen::Screen;
     use termion::{clear, cursor};
 
@@ -72,14 +73,17 @@ pub mod byte_display {
         let main_panel_height = screen.data_frame_height();
         let mut rows = data.chunks(bytes_per_row).skip(scroll);
 
+        let mut line = Line::new(screen.data_frame_width() as usize);
+
         for i in 0..main_panel_height {
             if let Some(row) = rows.next() {
                 write!(
                     io,
-                    "{}{}{}",
+                    "{}{}",
                     cursor::Goto(1, (i + 1) as u16),
-                    clear::CurrentLine,
-                    format_row(row),
+                    // warning: will panic if given more bytes than would fit on a single row
+                    // (includes whitespace and two cells per byte)
+                    line.format(row),
                 ).unwrap();
             } else {
                 write!(
@@ -90,13 +94,6 @@ pub mod byte_display {
                 ).unwrap();
             }
         }
-    }
-
-    fn format_row(row: &[u8]) -> String {
-        row.iter()
-            .map(|b| format!("{:02X}", b))
-            .collect::<Vec<_>>()
-            .join(" ")
     }
 
     #[cfg(test)]

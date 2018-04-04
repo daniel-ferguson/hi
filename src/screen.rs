@@ -69,6 +69,10 @@ impl<'a> Screen<'a> {
         self.frame.height - Self::status_bar_height() - Self::prompt_height()
     }
 
+    pub fn data_frame_width(&self) -> u16 {
+        self.frame.width
+    }
+
     pub fn status_bar_position(&self) -> Point {
         Point {
             x: 1,
