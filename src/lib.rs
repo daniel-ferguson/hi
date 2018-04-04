@@ -112,3 +112,78 @@ pub mod byte_display {
         }
     }
 }
+
+pub mod line {
+    const LOOKUP: [char; 16] = [
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+    ];
+
+    pub struct Line {
+        length: usize,
+        text: String,
+    }
+
+    impl Line {
+        pub fn new(length: usize) -> Line {
+            Line {
+                length: length,
+                text: String::with_capacity(length),
+            }
+        }
+
+        pub fn format(&mut self, bytes: &[u8]) -> &str {
+            let formatted_length = bytes.len() * 2 + bytes.len() - 1;
+            assert!(formatted_length <= self.length);
+
+            self.text.clear();
+
+            // translate bytes into hex representations
+            for (i, byte) in bytes.iter().enumerate() {
+                self.text.push(LOOKUP[(byte >> 4) as usize]);
+                self.text.push(LOOKUP[(byte & 0xF) as usize]);
+                if i < bytes.len() - 1 {
+                    self.text.push(' ');
+                }
+            }
+
+            // pad string with spaces
+            for _ in 0..(self.length - formatted_length) {
+                self.text.push(' ');
+            }
+
+            &self.text
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::Line;
+
+        #[test]
+        fn format_represents_bytes_as_hex_values() {
+            let mut line = Line::new(2);
+
+            assert_eq!(line.format(&[129]), "81");
+        }
+
+        #[test]
+        fn format_inserts_spaces_between_values() {
+            let mut line = Line::new(5);
+
+            assert_eq!(line.format(&[129, 0]), "81 00");
+        }
+
+        #[test]
+        fn format_pads_line_with_spaces() {
+            let mut line = Line::new(10);
+
+            assert_eq!(line.format(&[129, 0]), "81 00     ");
+        }
+
+        #[test]
+        #[should_panic]
+        fn format_panics_if_given_more_bytes_than_there_is_line_space() {
+            Line::new(4).format(&[111, 222, 000]);
+        }
+    }
+}
