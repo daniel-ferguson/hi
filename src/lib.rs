@@ -18,8 +18,8 @@ pub mod status_bar {
 
     pub fn render<T: Write>(io: &mut T, screen: &Screen, path: &str) {
         let message_right = format!(
-            "{}|o:{}|s:{}|w:{}",
-            &screen.state, screen.offset, screen.scroll_y, screen.bytes_per_row
+            "{}|o:{}|sy:{}|sx:{}|w:{}",
+            &screen.state, screen.offset, screen.scroll_y, screen.scroll_x, screen.bytes_per_row
         );
         let bar = line_of_spaces(screen.status_bar_dimensions().width as usize);
 
@@ -68,6 +68,8 @@ pub mod byte_display {
     use termion::{clear, cursor};
 
     pub fn render<T: Write>(io: &mut T, data: &[u8], screen: &Screen) {
+        use std::cmp;
+
         let scroll = screen.scroll_y;
         let bytes_per_row = screen.bytes_per_row;
         let main_panel_height = screen.data_frame_height();
@@ -77,13 +79,29 @@ pub mod byte_display {
 
         for i in 0..main_panel_height {
             if let Some(row) = rows.next() {
+                // construct and print a view into the row, which satisfies two conditions:
+                //  * contains only as many bytes as can fit onto a line
+                //  * is offset according to the scroll x property
+                //
+                // We constrain the end index to the length of the row to avoid causing a panic by
+                // indexing too far, this is necessary in a number of cases: lines shorter than
+                // max-width, scrolling far enough for blank space to be visible, etc.
+                // Line's ::format method will produce properly formatted strings for short rows.
+                //
+                // We constrain the start index by the end index to ensure if we're ever told to
+                // scroll past the end of the row (probably shouldn't happen) we don't blow up.
+                let end = cmp::min(
+                    screen.scroll_x + max_bytes(screen.data_frame_width()),
+                    row.len(),
+                );
+                let start = cmp::min(screen.scroll_x, end);
+                let view = &row[start..end];
+
                 write!(
                     io,
                     "{}{}",
                     cursor::Goto(1, (i + 1) as u16),
-                    // warning: will panic if given more bytes than would fit on a single row
-                    // (includes whitespace and two cells per byte)
-                    line.format(row),
+                    line.format(view),
                 ).unwrap();
             } else {
                 write!(
@@ -93,6 +111,37 @@ pub mod byte_display {
                     clear::CurrentLine
                 ).unwrap();
             }
+        }
+    }
+
+    /// Calculate number of bytes which can be displayed per line
+    fn max_bytes(line_length: u16) -> usize {
+        if line_length > 0 {
+            (line_length as usize + 1) / 3
+        } else {
+            0
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::max_bytes;
+
+        #[test]
+        fn max_bytes_when_line_length_is_less_than_2() {
+            assert_eq!(max_bytes(1), 0);
+            assert_eq!(max_bytes(0), 0);
+        }
+
+        #[test]
+        fn max_bytes_when_line_length_accounting_for_padding() {
+            assert_eq!(max_bytes(2), 1);
+            assert_eq!(max_bytes(3), 1);
+            assert_eq!(max_bytes(4), 1);
+            assert_eq!(max_bytes(5), 2);
+            assert_eq!(max_bytes(6), 2);
+            assert_eq!(max_bytes(7), 2);
+            assert_eq!(max_bytes(8), 3);
         }
     }
 }

@@ -5,6 +5,8 @@ use std::str::FromStr;
 #[derive(Debug, PartialEq)]
 enum CommandName {
     Offset,
+    ScrollX,
+    ScrollY,
     Width,
 }
 
@@ -18,6 +20,8 @@ impl FromStr for CommandName {
         match s {
             "o" | "offset" => Ok(CommandName::Offset),
             "w" | "width" => Ok(CommandName::Width),
+            "x" | "scrollx" => Ok(CommandName::ScrollX),
+            "y" | "scrolly" => Ok(CommandName::ScrollY),
             _ => Err(CommandParseError),
         }
     }
@@ -25,6 +29,8 @@ impl FromStr for CommandName {
 
 #[derive(Debug, PartialEq)]
 pub enum Command {
+    ScrollX(usize),
+    ScrollY(usize),
     SetOffset(usize),
     SetWidth(usize),
 }
@@ -72,9 +78,31 @@ named!(command_width<&[u8], Command>,
            )
        );
 
+named!(command_scroll_x<&[u8], Command>,
+       do_parse!(
+           many0!(whitespace)            >>
+           arg1: usize_digit             >>
+           many0!(whitespace)            >>
+           eof!()                        >>
+           ({ Command::ScrollX(arg1) })
+           )
+       );
+
+named!(command_scroll_y<&[u8], Command>,
+       do_parse!(
+           many0!(whitespace)            >>
+           arg1: usize_digit             >>
+           many0!(whitespace)            >>
+           eof!()                        >>
+           ({ Command::ScrollY(arg1) })
+           )
+       );
+
 named!(pub command<&[u8], Command>,
        switch!(command_name,
                CommandName::Offset => complete!(command_offset) |
+               CommandName::ScrollX => complete!(command_scroll_x) |
+               CommandName::ScrollY => complete!(command_scroll_y) |
                CommandName::Width => complete!(command_width)
                )
        );
@@ -159,6 +187,8 @@ mod tests {
             assert_parse_ok!(command, Command::SetOffset(0), [b"offset 0", b"o  0"]);
             assert_parse_ok!(command, Command::SetWidth(32), [b"width 32", b"w 32"]);
             assert_parse_ok!(command, Command::SetWidth(0), [b"width 0", b"w  0"]);
+            assert_parse_ok!(command, Command::ScrollX(0), [b"scrollx 0", b"x  0"]);
+            assert_parse_ok!(command, Command::ScrollY(0), [b"scrolly 0", b"y  0"]);
             assert_parse_any_error!(command, [b"wdith 3", b"width", b"wid"]);
             assert_parse_any_error!(command, [b"offest 3", b"offset", b"offse"]);
         }

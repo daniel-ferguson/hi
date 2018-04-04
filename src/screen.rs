@@ -25,6 +25,7 @@ pub struct Screen<'a> {
     pub frame: Frame,
     pub offset: usize,
     pub scroll_y: usize,
+    pub scroll_x: usize,
     pub bytes_per_row: usize,
     pub data_frame_dirty: bool,
     pub prompt_bar_dirty: bool,
@@ -49,6 +50,7 @@ impl<'a> Screen<'a> {
             frame: frame,
             offset: 0,
             scroll_y: 0,
+            scroll_x: 0,
             bytes_per_row: 32,
             data: data,
             data_frame_dirty: false,
@@ -201,9 +203,9 @@ impl<'a> Screen<'a> {
 
         let anchor = top_left_byte_index(self.offset, self.scroll_y, self.bytes_per_row);
 
-        let s = scroll_for_anchor(anchor, self.offset, self.bytes_per_row);
+        let s = scroll_y_for_anchor(anchor, self.offset, self.bytes_per_row);
         let o = offset_for_anchor(anchor, self.offset, self.bytes_per_row);
-        let (s, o) = balance_offset_and_scroll(s, o, self.bytes_per_row);
+        let (s, o) = balance_offset_and_scroll_y(s, o, self.bytes_per_row);
 
         self.scroll_y = s;
         self.offset = o;
@@ -216,6 +218,24 @@ impl<'a> Screen<'a> {
         self.state = State::Wait;
 
         self.offset = offset;
+    }
+
+    pub fn set_scroll_x(&mut self, scroll: usize) {
+        self.data_frame_dirty = true;
+        self.prompt_bar_dirty = true;
+        self.status_bar_dirty = true;
+        self.state = State::Wait;
+
+        self.scroll_x = scroll;
+    }
+
+    pub fn set_scroll_y(&mut self, scroll: usize) {
+        self.data_frame_dirty = true;
+        self.prompt_bar_dirty = true;
+        self.status_bar_dirty = true;
+        self.state = State::Wait;
+
+        self.scroll_y = scroll;
     }
 
     pub fn clear_dirty_flags(&mut self) {
@@ -234,17 +254,21 @@ fn max_scroll_y(height: usize, data: &[u8], width: usize) -> usize {
     }
 }
 
-fn balance_offset_and_scroll(scroll: usize, offset: usize, bytes_per_row: usize) -> (usize, usize) {
-    let scroll = scroll + offset / bytes_per_row;
+fn balance_offset_and_scroll_y(
+    scroll_y: usize,
+    offset: usize,
+    bytes_per_row: usize,
+) -> (usize, usize) {
+    let scroll_y = scroll_y + offset / bytes_per_row;
     let offset = offset % bytes_per_row;
-    (scroll, offset)
+    (scroll_y, offset)
 }
 
-fn top_left_byte_index(offset: usize, scroll: usize, bytes_per_row: usize) -> usize {
-    offset + scroll * bytes_per_row
+fn top_left_byte_index(offset: usize, scroll_y: usize, bytes_per_row: usize) -> usize {
+    offset + scroll_y * bytes_per_row
 }
 
-fn scroll_for_anchor(anchor: usize, offset: usize, bytes_per_row: usize) -> usize {
+fn scroll_y_for_anchor(anchor: usize, offset: usize, bytes_per_row: usize) -> usize {
     (anchor - offset) / bytes_per_row
 }
 

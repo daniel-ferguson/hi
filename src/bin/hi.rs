@@ -80,7 +80,7 @@ fn main() {
             },
             State::Prompt => match evt {
                 Event::Key(x) => {
-                    use hi::command_prompt::Command::{SetOffset, SetWidth};
+                    use hi::command_prompt::Command::{ScrollX, ScrollY, SetOffset, SetWidth};
                     command_machine = command_machine.step(x);
                     match command_machine.last_event {
                         CommandMachineEvent::Reset | CommandMachineEvent::UnknownCommand(..) => {
@@ -89,6 +89,8 @@ fn main() {
                         CommandMachineEvent::Update => screen.update_prompt(),
                         CommandMachineEvent::Execute(SetWidth(n)) => screen.set_width(n),
                         CommandMachineEvent::Execute(SetOffset(n)) => screen.set_offset(n),
+                        CommandMachineEvent::Execute(ScrollX(n)) => screen.set_scroll_x(n),
+                        CommandMachineEvent::Execute(ScrollY(n)) => screen.set_scroll_y(n),
                     }
                 }
                 e => {
