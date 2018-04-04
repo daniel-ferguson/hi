@@ -47,13 +47,7 @@ fn main() {
 
     stdout.flush().unwrap();
 
-    byte_display::render(
-        &mut stdout,
-        screen.scroll,
-        screen.data,
-        screen.bytes_per_row,
-        screen.data_frame_height(),
-    );
+    byte_display::render(&mut stdout, screen.data, &screen);
     status_bar::render(&mut stdout, &screen, &path);
     stdout.flush().unwrap();
 
@@ -107,13 +101,7 @@ fn main() {
         if screen.data_frame_dirty {
             let len = screen.data.len();
             let data = &screen.data[screen.offset..len];
-            byte_display::render(
-                &mut stdout,
-                screen.scroll,
-                data,
-                screen.bytes_per_row,
-                screen.data_frame_height(),
-            );
+            byte_display::render(&mut stdout, data, &screen);
         }
 
         if screen.status_bar_dirty {

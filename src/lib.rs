@@ -63,15 +63,13 @@ pub mod status_bar {
 pub mod byte_display {
     use std::io::Write;
 
+    use super::screen::Screen;
     use termion::{clear, cursor};
 
-    pub fn render<T: Write>(
-        io: &mut T,
-        scroll: usize,
-        data: &[u8],
-        bytes_per_row: usize,
-        main_panel_height: u16,
-    ) {
+    pub fn render<T: Write>(io: &mut T, data: &[u8], screen: &Screen) {
+        let scroll = screen.scroll;
+        let bytes_per_row = screen.bytes_per_row;
+        let main_panel_height = screen.data_frame_height();
         let mut rows = data.chunks(bytes_per_row).skip(scroll);
 
         for i in 0..main_panel_height {
