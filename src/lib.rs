@@ -95,17 +95,6 @@ pub mod byte_display {
             }
         }
     }
-
-    #[cfg(test)]
-    mod tests {
-        use super::format_row;
-
-        #[test]
-        fn it_renders_bytes_as_hex_strings() {
-            let res = format_row(&[0, 1, 15, 255]);
-            assert_eq!(res, "00 01 0F FF");
-        }
-    }
 }
 
 pub mod line {
