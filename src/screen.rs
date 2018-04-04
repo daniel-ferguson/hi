@@ -107,6 +107,23 @@ impl<'a> Screen<'a> {
         }
     }
 
+    pub fn scroll_left(&mut self) {
+        if self.scroll_x > 0 {
+            self.data_frame_dirty = true;
+            self.status_bar_dirty = true;
+
+            self.scroll_x -= 1;
+        }
+    }
+
+    pub fn scroll_right(&mut self) {
+        if self.scroll_x < max_scroll_x(self.bytes_per_row, self.data_frame_width() as usize) {
+            self.data_frame_dirty = true;
+            self.status_bar_dirty = true;
+            self.scroll_x += 1;
+        }
+    }
+
     pub fn down(&mut self) {
         self.data_frame_dirty = true;
         self.status_bar_dirty = true;
@@ -251,6 +268,16 @@ fn max_scroll_y(height: usize, data: &[u8], width: usize) -> usize {
         lines - height / 2
     } else {
         0
+    }
+}
+
+fn max_scroll_x(bytes_per_row: usize, screen_width: usize) -> usize {
+    let bytes_on_screen = (screen_width + 1) / 3;
+
+    if bytes_per_row < bytes_on_screen / 2 {
+        bytes_on_screen / 2
+    } else {
+        bytes_per_row - (bytes_on_screen / 2)
     }
 }
 

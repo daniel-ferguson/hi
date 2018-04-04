@@ -64,8 +64,8 @@ fn main() {
                     write!(stdout, "{}", termion::cursor::Goto(1, 1)).unwrap();
                     break;
                 }
-                Event::Key(Key::Char('h')) => screen.left(),
-                Event::Key(Key::Char('l')) => screen.right(),
+                Event::Key(Key::Char('h')) => screen.scroll_left(),
+                Event::Key(Key::Char('l')) => screen.scroll_right(),
                 Event::Key(Key::Char('j')) => screen.down(),
                 Event::Key(Key::Char('k')) => screen.up(),
                 Event::Key(Key::Char(':')) => {
