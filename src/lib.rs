@@ -19,7 +19,7 @@ pub mod status_bar {
     pub fn render<T: Write>(io: &mut T, screen: &Screen, path: &str) {
         let message_right = format!(
             "{}|o:{}|s:{}|w:{}",
-            &screen.state, screen.offset, screen.scroll, screen.bytes_per_row
+            &screen.state, screen.offset, screen.scroll_y, screen.bytes_per_row
         );
         let bar = line_of_spaces(screen.status_bar_dimensions().width as usize);
 
@@ -68,7 +68,7 @@ pub mod byte_display {
     use termion::{clear, cursor};
 
     pub fn render<T: Write>(io: &mut T, data: &[u8], screen: &Screen) {
-        let scroll = screen.scroll;
+        let scroll = screen.scroll_y;
         let bytes_per_row = screen.bytes_per_row;
         let main_panel_height = screen.data_frame_height();
         let mut rows = data.chunks(bytes_per_row).skip(scroll);

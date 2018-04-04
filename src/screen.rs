@@ -24,7 +24,7 @@ pub struct Screen<'a> {
     pub state: State,
     pub frame: Frame,
     pub offset: usize,
-    pub scroll: usize,
+    pub scroll_y: usize,
     pub bytes_per_row: usize,
     pub data_frame_dirty: bool,
     pub prompt_bar_dirty: bool,
@@ -48,7 +48,7 @@ impl<'a> Screen<'a> {
             state: State::Wait,
             frame: frame,
             offset: 0,
-            scroll: 0,
+            scroll_y: 0,
             bytes_per_row: 32,
             data: data,
             data_frame_dirty: false,
@@ -111,8 +111,10 @@ impl<'a> Screen<'a> {
 
         let data = &self.data[self.offset..self.data.len()];
 
-        if self.scroll < max_scroll(self.data_frame_height() as usize, &data, self.bytes_per_row) {
-            self.scroll += 1;
+        if self.scroll_y
+            < max_scroll_y(self.data_frame_height() as usize, &data, self.bytes_per_row)
+        {
+            self.scroll_y += 1;
         }
     }
 
@@ -120,8 +122,8 @@ impl<'a> Screen<'a> {
         self.data_frame_dirty = true;
         self.status_bar_dirty = true;
 
-        if self.scroll > 0 {
-            self.scroll -= 1;
+        if self.scroll_y > 0 {
+            self.scroll_y -= 1;
         }
     }
 
@@ -132,12 +134,13 @@ impl<'a> Screen<'a> {
         let len = self.data.len();
         let data = &self.data[self.offset..len];
 
-        if (self.scroll + self.data_frame_height() as usize)
-            < max_scroll(self.data_frame_height() as usize, &data, self.bytes_per_row)
+        if (self.scroll_y + self.data_frame_height() as usize)
+            < max_scroll_y(self.data_frame_height() as usize, &data, self.bytes_per_row)
         {
-            self.scroll += self.data_frame_height() as usize;
+            self.scroll_y += self.data_frame_height() as usize;
         } else {
-            self.scroll = max_scroll(self.data_frame_height() as usize, &data, self.bytes_per_row);
+            self.scroll_y =
+                max_scroll_y(self.data_frame_height() as usize, &data, self.bytes_per_row);
         }
     }
 
@@ -145,10 +148,10 @@ impl<'a> Screen<'a> {
         self.data_frame_dirty = true;
         self.status_bar_dirty = true;
 
-        if self.data_frame_height() as usize > self.scroll {
-            self.scroll = 0;
+        if self.data_frame_height() as usize > self.scroll_y {
+            self.scroll_y = 0;
         } else {
-            self.scroll -= self.data_frame_height() as usize;
+            self.scroll_y -= self.data_frame_height() as usize;
         }
     }
 
@@ -156,7 +159,7 @@ impl<'a> Screen<'a> {
         self.data_frame_dirty = true;
         self.status_bar_dirty = true;
 
-        self.scroll = 0;
+        self.scroll_y = 0;
     }
 
     pub fn end(&mut self) {
@@ -166,9 +169,9 @@ impl<'a> Screen<'a> {
         let len = self.data.len();
         let data = &self.data[self.offset..len];
 
-        self.scroll = max_scroll(self.data_frame_height() as usize, &data, self.bytes_per_row);
+        self.scroll_y = max_scroll_y(self.data_frame_height() as usize, &data, self.bytes_per_row);
 
-        self.scroll = 0;
+        self.scroll_y = 0;
     }
 
     pub fn prompt(&mut self) {
@@ -196,13 +199,13 @@ impl<'a> Screen<'a> {
 
         self.bytes_per_row = width;
 
-        let anchor = top_left_byte_index(self.offset, self.scroll, self.bytes_per_row);
+        let anchor = top_left_byte_index(self.offset, self.scroll_y, self.bytes_per_row);
 
         let s = scroll_for_anchor(anchor, self.offset, self.bytes_per_row);
         let o = offset_for_anchor(anchor, self.offset, self.bytes_per_row);
         let (s, o) = balance_offset_and_scroll(s, o, self.bytes_per_row);
 
-        self.scroll = s;
+        self.scroll_y = s;
         self.offset = o;
     }
 
@@ -222,7 +225,7 @@ impl<'a> Screen<'a> {
     }
 }
 
-fn max_scroll(height: usize, data: &[u8], width: usize) -> usize {
+fn max_scroll_y(height: usize, data: &[u8], width: usize) -> usize {
     let lines = data.len() / width as usize;
     if lines > height {
         lines - height / 2
@@ -254,7 +257,7 @@ mod tests {
     use super::*;
 
     mod max_scroll {
-        use super::max_scroll;
+        use super::max_scroll_y;
 
         #[test]
         fn it_allows_scrolling_half_a_screen_past_end_of_data() {
@@ -262,7 +265,7 @@ mod tests {
             let height = 60;
             let data: &[u8; 80] = &[0; 80];
             let width = 1;
-            assert_eq!(max_scroll(height, data, width), 20 + height / 2);
+            assert_eq!(max_scroll_y(height, data, width), 20 + height / 2);
         }
 
         #[test]
@@ -271,7 +274,7 @@ mod tests {
             let height = 60;
             let data: &[u8; 20] = &[0; 20];
             let width = 1;
-            assert_eq!(max_scroll(height, data, width), 0);
+            assert_eq!(max_scroll_y(height, data, width), 0);
         }
     }
 }
