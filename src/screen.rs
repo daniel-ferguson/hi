@@ -25,7 +25,10 @@ pub struct Frame {
     pub height: u16,
 }
 
-pub struct Screen<'a> {
+pub struct Screen<'a, T>
+where
+    T: Write,
+{
     pub state: State,
     pub frame: Frame,
     pub offset: usize,
@@ -37,6 +40,7 @@ pub struct Screen<'a> {
     pub status_bar_dirty: bool,
     pub switch_focus_to_prompt: bool,
     pub data: &'a [u8],
+    pub out: T,
 }
 
 pub struct Point {
@@ -49,8 +53,8 @@ pub struct Dimension {
     pub height: u16,
 }
 
-impl<'a> Screen<'a> {
-    pub fn new(data: &'a [u8], frame: Frame) -> Screen {
+impl<'a, T: Write> Screen<'a, T> {
+    pub fn new(data: &'a [u8], frame: Frame, out: T) -> Screen<T> {
         Screen {
             state: State::Wait,
             frame: frame,
@@ -63,6 +67,7 @@ impl<'a> Screen<'a> {
             prompt_bar_dirty: true,
             status_bar_dirty: true,
             switch_focus_to_prompt: false,
+            out,
         }
     }
 
@@ -268,12 +273,7 @@ impl<'a> Screen<'a> {
         self.switch_focus_to_prompt = false;
     }
 
-    pub fn render<T: Write>(
-        &mut self,
-        out: &mut T,
-        ctx: &Context,
-        prompt: &CommandPrompt,
-    ) -> Result<(), Box<StdError>> {
+    pub fn render(&mut self, ctx: &Context, prompt: &CommandPrompt) -> Result<(), Box<StdError>> {
         use byte_display;
         use status_bar;
         use termion;
@@ -281,16 +281,16 @@ impl<'a> Screen<'a> {
         if self.data_frame_dirty {
             let len = self.data.len();
             let data = &self.data[self.offset..len];
-            byte_display::render(out, data, &self);
+            byte_display::render(self, data)
         }
 
         if self.status_bar_dirty {
-            status_bar::render(out, &self, ctx.file_path);
+            status_bar::render(self, ctx.file_path);
         }
 
         if self.switch_focus_to_prompt {
             write!(
-                out,
+                self.out,
                 "{}{}{}:",
                 termion::cursor::Show,
                 termion::cursor::Goto(1, self.frame.height),
@@ -300,7 +300,7 @@ impl<'a> Screen<'a> {
             match self.state {
                 State::Wait => {
                     write!(
-                        out,
+                        self.out,
                         "{}{}{}",
                         termion::cursor::Goto(1, self.frame.height),
                         termion::clear::CurrentLine,
@@ -309,7 +309,7 @@ impl<'a> Screen<'a> {
                 }
                 State::Prompt => {
                     write!(
-                        out,
+                        self.out,
                         "{}{}{}:{}",
                         termion::cursor::Show,
                         termion::cursor::Goto(1, self.frame.height),
@@ -321,7 +321,7 @@ impl<'a> Screen<'a> {
         }
 
         self.clear_dirty_flags();
-        out.flush()?;
+        self.out.flush()?;
         Ok(())
     }
 }

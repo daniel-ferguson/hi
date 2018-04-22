@@ -17,33 +17,28 @@ use termion::raw::IntoRawMode;
 use hi::command_prompt::{CommandMachineEvent, CommandPrompt};
 use hi::context::Context;
 use hi::screen::Screen;
-use hi::{byte_display, status_bar, Frame, State};
+use hi::{Frame, State};
 
 enum HandlerStatus {
     Continue,
     Quit,
 }
 
-struct EventHandler<'a, 'b, T: 'a>
+struct EventHandler<'a, 'b: 'a, T: 'a>
 where
     T: Write,
 {
-    out: &'a mut T,
     prompt: CommandPrompt,
-    screen: &'b mut Screen<'b>,
+    screen: &'a mut Screen<'b, T>,
 }
 
-impl<'a, 'b, T: 'a> EventHandler<'a, 'b, T>
+impl<'a, 'b: 'a, T: 'a> EventHandler<'a, 'b, T>
 where
     T: Write,
 {
-    fn new(out: &'a mut T, screen: &'b mut Screen<'b>) -> Self {
+    fn new(screen: &'a mut Screen<'b, T>) -> Self {
         let prompt = CommandPrompt::new();
-        Self {
-            out,
-            prompt,
-            screen,
-        }
+        Self { prompt, screen }
     }
 
     fn call(
@@ -52,7 +47,6 @@ where
         event: termion::event::Event,
     ) -> Result<HandlerStatus, Box<StdError>> {
         let screen = &mut self.screen;
-        let stdout = &mut self.out;
 
         match screen.state {
             State::Wait => match event {
@@ -92,7 +86,7 @@ where
             },
         }
 
-        screen.render(stdout, context, &self.prompt)?;
+        screen.render(context, &self.prompt)?;
         Ok(HandlerStatus::Continue)
     }
 }
@@ -106,16 +100,16 @@ fn run() -> Result<(), Box<StdError>> {
     file.read_to_end(&mut bytes)?;
 
     let stdin = stdin();
-    let mut stdout = stdout().into_raw_mode()?;
+    let stdout = stdout().into_raw_mode()?;
     let (width, height) = termion::terminal_size()?;
-    let mut screen = Screen::new(&bytes, Frame { width, height });
+    let mut screen = Screen::new(&bytes, Frame { width, height }, stdout);
     let context = Context { file_path: &path };
 
-    screen.render(&mut stdout, &context, &CommandPrompt::new())?;
+    screen.render(&context, &CommandPrompt::new())?;
 
     {
         // constrain stdout mutable borrow to event handling loop
-        let mut handler = EventHandler::new(&mut stdout, &mut screen);
+        let mut handler = EventHandler::new(&mut screen);
         for event in stdin.events() {
             let event = event?;
             match handler.call(&context, event)? {
@@ -126,11 +120,12 @@ fn run() -> Result<(), Box<StdError>> {
     }
 
     write!(
-        stdout,
+        screen.out,
         "{}{}",
         termion::cursor::Goto(1, 1),
         termion::cursor::Show
     )?;
+
     Ok(())
 }
 

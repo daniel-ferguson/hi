@@ -17,7 +17,7 @@ pub mod status_bar {
 
     use super::screen::Screen;
 
-    pub fn render<T: Write>(io: &mut T, screen: &Screen, path: &str) {
+    pub fn render<T: Write>(screen: &mut Screen<T>, path: &str) {
         let message_right = format!(
             "{}|o:{}|sy:{}|sx:{}|w:{}",
             &screen.state, screen.offset, screen.scroll_y, screen.scroll_x, screen.bytes_per_row
@@ -42,7 +42,12 @@ pub mod status_bar {
             color::Fg(color::Reset),
         );
 
-        write!(io, "{}{}", cursor::Goto(1, status_bar_position.y), bar_full,).unwrap();
+        write!(
+            &mut screen.out,
+            "{}{}",
+            cursor::Goto(1, status_bar_position.y),
+            bar_full,
+        ).unwrap();
     }
 
     fn line_of_spaces(len: usize) -> String {
@@ -68,7 +73,7 @@ pub mod byte_display {
     use super::screen::Screen;
     use termion::{clear, cursor};
 
-    pub fn render<T: Write>(io: &mut T, data: &[u8], screen: &Screen) {
+    pub fn render<T: Write>(screen: &mut Screen<T>, data: &[u8]) {
         use std::cmp;
 
         let scroll = screen.scroll_y;
@@ -99,14 +104,14 @@ pub mod byte_display {
                 let view = &row[start..end];
 
                 write!(
-                    io,
+                    screen.out,
                     "{}{}",
                     cursor::Goto(1, (i + 1) as u16),
                     line.format(view),
                 ).unwrap();
             } else {
                 write!(
-                    io,
+                    screen.out,
                     "{}{}",
                     cursor::Goto(1, (i + 1) as u16),
                     clear::CurrentLine
