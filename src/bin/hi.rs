@@ -67,13 +67,11 @@ where
                 Event::Key(x) => {
                     use hi::command_prompt::Command::{ScrollX, ScrollY, SetOffset, SetWidth};
 
-                    self.prompt = self.prompt.step(x);
-
-                    match self.prompt.last_event {
+                    match self.prompt.step(x) {
                         CommandMachineEvent::Reset | CommandMachineEvent::UnknownCommand(..) => {
                             screen.reset_prompt()
                         }
-                        CommandMachineEvent::Update => screen.update_prompt(),
+                        CommandMachineEvent::Update(text) => screen.update_prompt(text),
                         CommandMachineEvent::Execute(SetWidth(n)) => screen.set_width(n),
                         CommandMachineEvent::Execute(SetOffset(n)) => screen.set_offset(n),
                         CommandMachineEvent::Execute(ScrollX(n)) => screen.set_scroll_x(n),
@@ -87,7 +85,7 @@ where
             },
         }
 
-        screen.render(context, &self.prompt)?;
+        screen.render(context)?;
         Ok(HandlerStatus::Continue)
     }
 }
@@ -106,7 +104,7 @@ fn run() -> Result<(), Box<StdError>> {
     let mut screen = Screen::new(&bytes, Frame { width, height }, stdout);
     let context = Context { file_path: &path };
 
-    screen.render(&context, &CommandPrompt::new())?;
+    screen.render(&context)?;
 
     let mut handler = EventHandler::new(&mut screen);
     for event in stdin.events() {

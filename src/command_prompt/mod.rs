@@ -4,9 +4,9 @@ pub mod parser;
 pub use self::parser::{Command, CommandParseError as ParseError};
 
 #[derive(Clone, Debug)]
-pub enum CommandMachineEvent {
+pub enum CommandMachineEvent<'a> {
     Reset,
-    Update,
+    Update(&'a str),
     Execute(Command),
     UnknownCommand(String),
 }
@@ -14,7 +14,6 @@ pub enum CommandMachineEvent {
 pub struct CommandPrompt {
     pub text: String,
     pub index: usize,
-    pub last_event: CommandMachineEvent,
 }
 
 impl CommandPrompt {
@@ -22,61 +21,40 @@ impl CommandPrompt {
         Self {
             index: 0,
             text: String::new(),
-            last_event: CommandMachineEvent::Reset,
         }
     }
 
-    pub fn step(&self, key: Key) -> Self {
+    pub fn step(&mut self, key: Key) -> CommandMachineEvent {
         match key {
             Key::Char('\n') => {
-                let last_event = match parser::parse_command(&self.text) {
+                let result = match parser::parse_command(&self.text) {
                     Ok(command) => CommandMachineEvent::Execute(command),
                     Err(..) => CommandMachineEvent::UnknownCommand(self.text.to_owned()),
                 };
-                let text = String::new();
-                Self {
-                    index: 0,
-                    text: text,
-                    last_event: last_event,
-                }
+
+                self.text.clear();
+                self.index = 0;
+
+                result
             }
             Key::Ctrl('c') => {
-                let text = String::new();
-                Self {
-                    index: 0,
-                    text,
-                    last_event: CommandMachineEvent::Reset,
-                }
+                self.text.clear();
+                self.index = 0;
+                CommandMachineEvent::Reset
             }
             Key::Char(x) => {
-                let mut text = self.text.clone();
-                text.push(x);
-                Self {
-                    index: self.index + 1,
-                    text,
-                    last_event: CommandMachineEvent::Update,
-                }
+                self.text.push(x);
+                self.index += 1;
+                CommandMachineEvent::Update(&self.text)
             }
             Key::Backspace => if self.index > 0 {
-                let mut text = self.text.clone();
-                text.remove(self.index - 1);
-                Self {
-                    index: self.index - 1,
-                    text,
-                    last_event: CommandMachineEvent::Update,
-                }
+                self.index -= 1;
+                self.text.remove(self.index);
+                CommandMachineEvent::Update(&self.text)
             } else {
-                Self {
-                    index: self.index,
-                    text: self.text.clone(),
-                    last_event: CommandMachineEvent::Update,
-                }
+                CommandMachineEvent::Update(&self.text)
             },
-            _ => Self {
-                index: self.index,
-                text: self.text.clone(),
-                last_event: self.last_event.clone(),
-            },
+            _ => CommandMachineEvent::Update(&self.text),
         }
     }
 }
@@ -88,12 +66,12 @@ mod tests {
 
     #[test]
     fn it_builds_text_based_on_input() {
-        let command = CommandPrompt::new();
-        let command = command.step(Key::Char('h'));
-        let command = command.step(Key::Char('e'));
-        let command = command.step(Key::Char('l'));
-        let command = command.step(Key::Char('l'));
-        let command = command.step(Key::Char('o'));
+        let mut command = CommandPrompt::new();
+        command.step(Key::Char('h'));
+        command.step(Key::Char('e'));
+        command.step(Key::Char('l'));
+        command.step(Key::Char('l'));
+        command.step(Key::Char('o'));
 
         assert_eq!(command.text, "hello");
         assert_eq!(command.index, 5);
@@ -101,32 +79,32 @@ mod tests {
 
     #[test]
     fn it_keeps_track_of_index() {
-        let command = CommandPrompt::new();
-        let command = command.step(Key::Char('h'));
+        let mut command = CommandPrompt::new();
+        command.step(Key::Char('h'));
         assert_eq!(command.index, 1);
-        let command = command.step(Key::Char('i'));
+        command.step(Key::Char('i'));
         assert_eq!(command.index, 2);
     }
 
     #[test]
     fn it_deletes_text_when_backspacing() {
-        let command = CommandPrompt::new();
-        let command = command.step(Key::Char('h'));
-        let command = command.step(Key::Char('i'));
+        let mut command = CommandPrompt::new();
+        command.step(Key::Char('h'));
+        command.step(Key::Char('i'));
 
-        let command = command.step(Key::Backspace);
+        command.step(Key::Backspace);
         assert_eq!(command.index, 1);
         assert_eq!(command.text, "h");
 
-        let command = command.step(Key::Backspace);
+        command.step(Key::Backspace);
         assert_eq!(command.index, 0);
         assert_eq!(command.text, "");
     }
 
     #[test]
     fn it_does_nothing_when_backspacing_past_the_start_of_text() {
-        let command = CommandPrompt::new();
-        let command = command.step(Key::Backspace);
+        let mut command = CommandPrompt::new();
+        command.step(Key::Backspace);
         assert_eq!(command.index, 0);
         assert_eq!(command.text, "");
     }

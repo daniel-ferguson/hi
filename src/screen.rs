@@ -2,7 +2,6 @@ use std::error::Error as StdError;
 use std::fmt;
 use std::io::Write;
 
-use command_prompt::CommandPrompt;
 use context::Context;
 
 #[derive(Debug, PartialEq)]
@@ -43,6 +42,7 @@ where
     pub switch_focus_to_prompt: bool,
     pub data: &'a [u8],
     pub out: T,
+    prompt_text: String,
 }
 
 pub struct Point {
@@ -57,6 +57,7 @@ pub struct Dimension {
 
 impl<'a, T: Write> Screen<'a, T> {
     pub fn new(data: &'a [u8], frame: Frame, out: T) -> Screen<T> {
+        let default_prompt_capacity = 256;
         Screen {
             state: State::Wait,
             frame: frame,
@@ -70,6 +71,7 @@ impl<'a, T: Write> Screen<'a, T> {
             status_bar_dirty: true,
             switch_focus_to_prompt: false,
             out,
+            prompt_text: String::with_capacity(default_prompt_capacity),
         }
     }
 
@@ -243,12 +245,15 @@ impl<'a, T: Write> Screen<'a, T> {
         self.prompt_bar_dirty = true;
         self.status_bar_dirty = true;
         self.state = State::Wait;
+        self.prompt_text.clear();
     }
 
     /// Signal that the command prompt has been updated
-    pub fn update_prompt(&mut self) {
+    pub fn update_prompt(&mut self, text: &str) {
         self.prompt_bar_dirty = true;
         self.status_bar_dirty = true;
+        self.prompt_text.clear();
+        self.prompt_text.push_str(text);
     }
 
     /// Set number of bytes to display per row
@@ -320,7 +325,7 @@ impl<'a, T: Write> Screen<'a, T> {
     }
 
     /// Render the current state of Screen
-    pub fn render(&mut self, ctx: &Context, prompt: &CommandPrompt) -> Result<(), Box<StdError>> {
+    pub fn render(&mut self, ctx: &Context) -> Result<(), Box<StdError>> {
         use byte_display;
         use status_bar;
         use termion;
@@ -361,7 +366,7 @@ impl<'a, T: Write> Screen<'a, T> {
                         termion::cursor::Show,
                         termion::cursor::Goto(1, self.frame.height),
                         termion::clear::CurrentLine,
-                        prompt.text,
+                        self.prompt_text,
                     )?;
                 }
             }
