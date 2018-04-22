@@ -117,12 +117,7 @@ fn run() -> Result<(), Box<StdError>> {
         };
     }
 
-    write!(
-        screen.out,
-        "{}{}",
-        termion::cursor::Goto(1, 1),
-        termion::cursor::Show
-    )?;
+    screen.reset()?;
 
     Ok(())
 }

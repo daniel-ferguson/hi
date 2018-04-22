@@ -324,6 +324,16 @@ impl<'a, T: Write> Screen<'a, T> {
         self.out.flush()?;
         Ok(())
     }
+
+    /// Clear the screen and reset the cursor position
+    ///
+    /// This prepares the terminal for being reverted into cooked mode and should be the last
+    /// rendering call executed before termion's stdout handle is dropped.
+    pub fn reset(mut self) -> Result<(), Box<StdError>> {
+        use termion::cursor;
+        write!(self.out, "{}{}", cursor::Goto(1, 1), cursor::Show)?;
+        Ok(())
+    }
 }
 
 fn max_scroll_y(height: usize, data: &[u8], width: usize) -> usize {
