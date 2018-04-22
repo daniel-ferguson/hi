@@ -37,9 +37,9 @@ where
     pub scroll_y: usize,
     pub scroll_x: usize,
     pub bytes_per_row: usize,
-    pub data_frame_dirty: bool,
-    pub prompt_bar_dirty: bool,
-    pub status_bar_dirty: bool,
+    data_frame_dirty: bool,
+    prompt_bar_dirty: bool,
+    status_bar_dirty: bool,
     pub switch_focus_to_prompt: bool,
     pub data: &'a [u8],
     pub out: T,
@@ -312,7 +312,7 @@ impl<'a, T: Write> Screen<'a, T> {
         self.scroll_y = scroll;
     }
 
-    pub fn clear_dirty_flags(&mut self) {
+    fn clear_dirty_flags(&mut self) {
         self.data_frame_dirty = false;
         self.prompt_bar_dirty = false;
         self.status_bar_dirty = false;
