@@ -27,7 +27,7 @@ impl FromStr for CommandName {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Command {
     ScrollX(usize),
     ScrollY(usize),

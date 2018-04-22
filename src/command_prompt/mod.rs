@@ -3,7 +3,7 @@ use termion::event::Key;
 pub mod parser;
 pub use self::parser::{Command, CommandParseError as ParseError};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum CommandMachineEvent {
     Reset,
     Update,
@@ -26,51 +26,57 @@ impl CommandPrompt {
         }
     }
 
-    pub fn step(mut self, key: Key) -> Self {
+    pub fn step(&self, key: Key) -> Self {
         match key {
             Key::Char('\n') => {
                 let last_event = match parser::parse_command(&self.text) {
                     Ok(command) => CommandMachineEvent::Execute(command),
                     Err(..) => CommandMachineEvent::UnknownCommand(self.text.to_owned()),
                 };
-                self.text.clear();
+                let text = String::new();
                 Self {
                     index: 0,
-                    text: self.text,
+                    text: text,
                     last_event: last_event,
                 }
             }
             Key::Ctrl('c') => {
-                self.text.clear();
+                let text = String::new();
                 Self {
                     index: 0,
-                    text: self.text,
+                    text,
                     last_event: CommandMachineEvent::Reset,
                 }
             }
             Key::Char(x) => {
-                self.text.push(x);
+                let mut text = self.text.clone();
+                text.push(x);
                 Self {
                     index: self.index + 1,
-                    text: self.text,
+                    text,
                     last_event: CommandMachineEvent::Update,
                 }
             }
             Key::Backspace => if self.index > 0 {
-                self.text.remove(self.index - 1);
+                let mut text = self.text.clone();
+                text.remove(self.index - 1);
                 Self {
                     index: self.index - 1,
-                    text: self.text,
+                    text,
                     last_event: CommandMachineEvent::Update,
                 }
             } else {
                 Self {
                     index: self.index,
-                    text: self.text,
+                    text: self.text.clone(),
                     last_event: CommandMachineEvent::Update,
                 }
             },
-            _ => self,
+            _ => Self {
+                index: self.index,
+                text: self.text.clone(),
+                last_event: self.last_event.clone(),
+            },
         }
     }
 }
