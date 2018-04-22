@@ -61,10 +61,7 @@ where
 
         match screen.state {
             State::Wait => match event {
-                Event::Key(Key::Char('q')) => {
-                    write!(stdout, "{}", termion::cursor::Goto(1, 1))?;
-                    return Ok(HandlerStatus::Quit);
-                }
+                Event::Key(Key::Char('q')) => return Ok(HandlerStatus::Quit),
                 Event::Key(Key::Char('h')) => screen.scroll_left(),
                 Event::Key(Key::Char('l')) => screen.scroll_right(),
                 Event::Key(Key::Char('j')) => screen.down(),
@@ -195,7 +192,12 @@ fn run() -> Result<(), Box<StdError>> {
         }
     }
 
-    write!(stdout, "{}", termion::cursor::Show)?;
+    write!(
+        stdout,
+        "{}{}",
+        termion::cursor::Goto(1, 1),
+        termion::cursor::Show
+    )?;
     Ok(())
 }
 
