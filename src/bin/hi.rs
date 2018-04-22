@@ -38,13 +38,7 @@ fn run() -> Result<(), Box<StdError>> {
     write!(stdout, "{}", termion::cursor::Hide,)?;
 
     let (width, height) = termion::terminal_size()?;
-    let mut screen = Screen::new(
-        &bytes,
-        Frame {
-            width: width,
-            height: height,
-        },
-    );
+    let mut screen = Screen::new(&bytes, Frame { width, height });
 
     stdout.flush()?;
 
