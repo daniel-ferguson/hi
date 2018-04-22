@@ -1,3 +1,4 @@
+#![feature(nll)]
 extern crate env_logger;
 extern crate hi;
 #[macro_use]
@@ -107,16 +108,13 @@ fn run() -> Result<(), Box<StdError>> {
 
     screen.render(&context, &CommandPrompt::new())?;
 
-    {
-        // constrain stdout mutable borrow to event handling loop
-        let mut handler = EventHandler::new(&mut screen);
-        for event in stdin.events() {
-            let event = event?;
-            match handler.call(&context, event)? {
-                HandlerStatus::Continue => {}
-                HandlerStatus::Quit => break,
-            };
-        }
+    let mut handler = EventHandler::new(&mut screen);
+    for event in stdin.events() {
+        let event = event?;
+        match handler.call(&context, event)? {
+            HandlerStatus::Continue => {}
+            HandlerStatus::Quit => break,
+        };
     }
 
     write!(
