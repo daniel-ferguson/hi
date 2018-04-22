@@ -5,6 +5,7 @@ extern crate log;
 extern crate termion;
 
 use std::env;
+use std::error::Error as StdError;
 use std::fs;
 use std::io::Read;
 use std::io::{stdin, stdout, Write};
@@ -17,26 +18,26 @@ use hi::command_prompt::{CommandMachineEvent, CommandPrompt};
 use hi::screen::Screen;
 use hi::{byte_display, status_bar, Frame, State};
 
-fn main() {
-    env_logger::init().unwrap();
+fn run() -> Result<(), Box<StdError>> {
+    env_logger::init()?;
     let path = env::args().nth(1).expect("Usage: hi FILE");
-    let mut file = fs::File::open(&path).expect("File not found");
+    let mut file = fs::File::open(&path)?;
 
     let mut bytes = Vec::new();
-    file.read_to_end(&mut bytes).unwrap();
+    file.read_to_end(&mut bytes)?;
 
     let stdin = stdin();
-    let mut stdout = stdout().into_raw_mode().unwrap();
+    let mut stdout = stdout().into_raw_mode()?;
     write!(
         stdout,
         "{}{}",
         termion::clear::All,
         termion::cursor::Goto(1, 1)
-    ).unwrap();
+    )?;
 
-    write!(stdout, "{}", termion::cursor::Hide,).unwrap();
+    write!(stdout, "{}", termion::cursor::Hide,)?;
 
-    let (width, height) = termion::terminal_size().unwrap();
+    let (width, height) = termion::terminal_size()?;
     let mut screen = Screen::new(
         &bytes,
         Frame {
@@ -45,23 +46,23 @@ fn main() {
         },
     );
 
-    stdout.flush().unwrap();
+    stdout.flush()?;
 
     byte_display::render(&mut stdout, screen.data, &screen);
     status_bar::render(&mut stdout, &screen, &path);
-    stdout.flush().unwrap();
+    stdout.flush()?;
 
     let mut command_machine = CommandPrompt::new();
 
     for evt in stdin.events() {
         screen.clear_dirty_flags();
-        let evt = evt.unwrap();
+        let evt = evt?;
         let mut command_bar_focus = false;
 
         match screen.state {
             State::Wait => match evt {
                 Event::Key(Key::Char('q')) => {
-                    write!(stdout, "{}", termion::cursor::Goto(1, 1)).unwrap();
+                    write!(stdout, "{}", termion::cursor::Goto(1, 1))?;
                     break;
                 }
                 Event::Key(Key::Char('h')) => screen.scroll_left(),
@@ -120,7 +121,7 @@ fn main() {
                         termion::cursor::Goto(1, screen.frame.height),
                         termion::clear::CurrentLine,
                         termion::cursor::Hide
-                    ).unwrap();
+                    )?;
                 }
                 Update => {
                     write!(
@@ -130,7 +131,7 @@ fn main() {
                         termion::cursor::Goto(1, screen.frame.height),
                         termion::clear::CurrentLine,
                         command_machine.text,
-                    ).unwrap();
+                    )?;
                 }
             }
         }
@@ -142,11 +143,19 @@ fn main() {
                 termion::cursor::Show,
                 termion::cursor::Goto(1, screen.frame.height),
                 termion::clear::CurrentLine,
-            ).unwrap();
+            )?;
         }
 
-        stdout.flush().unwrap();
+        stdout.flush()?;
     }
 
-    write!(stdout, "{}", termion::cursor::Show).unwrap();
+    write!(stdout, "{}", termion::cursor::Show)?;
+    Ok(())
+}
+
+fn main() {
+    if let Err(e) = run() {
+        eprintln!("{}", e);
+        std::process::exit(1);
+    }
 }
