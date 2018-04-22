@@ -15,12 +15,9 @@ use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 
 use hi::command_prompt::{CommandMachineEvent, CommandPrompt};
+use hi::context::Context;
 use hi::screen::Screen;
 use hi::{byte_display, status_bar, Frame, State};
-
-struct Context<'a> {
-    file_path: &'a str,
-}
 
 enum HandlerStatus {
     Continue,
@@ -55,9 +52,7 @@ where
         event: termion::event::Event,
     ) -> Result<HandlerStatus, Box<StdError>> {
         let screen = &mut self.screen;
-        screen.clear_dirty_flags();
-        let mut command_bar_focus = false;
-        let mut stdout = &mut self.out;
+        let stdout = &mut self.out;
 
         match screen.state {
             State::Wait => match event {
@@ -66,10 +61,7 @@ where
                 Event::Key(Key::Char('l')) => screen.scroll_right(),
                 Event::Key(Key::Char('j')) => screen.down(),
                 Event::Key(Key::Char('k')) => screen.up(),
-                Event::Key(Key::Char(':')) => {
-                    screen.prompt();
-                    command_bar_focus = true;
-                }
+                Event::Key(Key::Char(':')) => screen.prompt(),
                 Event::Key(Key::Ctrl('d')) | Event::Key(Key::PageDown) => screen.page_down(),
                 Event::Key(Key::Ctrl('u')) | Event::Key(Key::PageUp) => screen.page_up(),
                 Event::Key(Key::Home) => screen.start(),
@@ -100,52 +92,7 @@ where
             },
         }
 
-        if screen.data_frame_dirty {
-            let len = screen.data.len();
-            let data = &screen.data[screen.offset..len];
-            byte_display::render(&mut stdout, data, &screen);
-        }
-
-        if screen.status_bar_dirty {
-            status_bar::render(&mut stdout, &screen, context.file_path);
-        }
-
-        use CommandMachineEvent::{Execute, Reset, Update};
-        if screen.prompt_bar_dirty {
-            match self.prompt.last_event {
-                Reset | Execute(_) | CommandMachineEvent::UnknownCommand(_) => {
-                    write!(
-                        stdout,
-                        "{}{}{}",
-                        termion::cursor::Goto(1, screen.frame.height),
-                        termion::clear::CurrentLine,
-                        termion::cursor::Hide
-                    )?;
-                }
-                Update => {
-                    write!(
-                        stdout,
-                        "{}{}{}:{}",
-                        termion::cursor::Show,
-                        termion::cursor::Goto(1, screen.frame.height),
-                        termion::clear::CurrentLine,
-                        self.prompt.text,
-                    )?;
-                }
-            }
-        }
-
-        if command_bar_focus {
-            write!(
-                stdout,
-                "{}{}{}:",
-                termion::cursor::Show,
-                termion::cursor::Goto(1, screen.frame.height),
-                termion::clear::CurrentLine,
-            )?;
-        }
-
-        stdout.flush()?;
+        screen.render(stdout, context, &self.prompt)?;
         Ok(HandlerStatus::Continue)
     }
 }

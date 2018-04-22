@@ -1,6 +1,11 @@
+use std::error::Error as StdError;
 use std::fmt;
+use std::io::Write;
 
-#[derive(Debug)]
+use command_prompt::CommandPrompt;
+use context::Context;
+
+#[derive(Debug, PartialEq)]
 pub enum State {
     Wait,
     Prompt,
@@ -30,6 +35,7 @@ pub struct Screen<'a> {
     pub data_frame_dirty: bool,
     pub prompt_bar_dirty: bool,
     pub status_bar_dirty: bool,
+    pub switch_focus_to_prompt: bool,
     pub data: &'a [u8],
 }
 
@@ -56,6 +62,7 @@ impl<'a> Screen<'a> {
             data_frame_dirty: false,
             prompt_bar_dirty: false,
             status_bar_dirty: false,
+            switch_focus_to_prompt: false,
         }
     }
 
@@ -194,6 +201,7 @@ impl<'a> Screen<'a> {
     pub fn prompt(&mut self) {
         self.prompt_bar_dirty = true;
         self.status_bar_dirty = true;
+        self.switch_focus_to_prompt = true;
         self.state = State::Prompt;
     }
 
@@ -257,6 +265,64 @@ impl<'a> Screen<'a> {
         self.data_frame_dirty = false;
         self.prompt_bar_dirty = false;
         self.status_bar_dirty = false;
+        self.switch_focus_to_prompt = false;
+    }
+
+    pub fn render<T: Write>(
+        &mut self,
+        out: &mut T,
+        ctx: &Context,
+        prompt: &CommandPrompt,
+    ) -> Result<(), Box<StdError>> {
+        use byte_display;
+        use status_bar;
+        use termion;
+
+        if self.data_frame_dirty {
+            let len = self.data.len();
+            let data = &self.data[self.offset..len];
+            byte_display::render(out, data, &self);
+        }
+
+        if self.status_bar_dirty {
+            status_bar::render(out, &self, ctx.file_path);
+        }
+
+        if self.switch_focus_to_prompt {
+            write!(
+                out,
+                "{}{}{}:",
+                termion::cursor::Show,
+                termion::cursor::Goto(1, self.frame.height),
+                termion::clear::CurrentLine,
+            )?;
+        } else if self.prompt_bar_dirty {
+            match self.state {
+                State::Wait => {
+                    write!(
+                        out,
+                        "{}{}{}",
+                        termion::cursor::Goto(1, self.frame.height),
+                        termion::clear::CurrentLine,
+                        termion::cursor::Hide
+                    )?;
+                }
+                State::Prompt => {
+                    write!(
+                        out,
+                        "{}{}{}:{}",
+                        termion::cursor::Show,
+                        termion::cursor::Goto(1, self.frame.height),
+                        termion::clear::CurrentLine,
+                        prompt.text,
+                    )?;
+                }
+            }
+        }
+
+        self.clear_dirty_flags();
+        out.flush()?;
+        Ok(())
     }
 }
 

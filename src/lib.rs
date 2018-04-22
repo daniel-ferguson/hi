@@ -5,6 +5,7 @@ extern crate nom;
 extern crate termion;
 
 pub mod command_prompt;
+pub mod context;
 pub mod screen;
 pub use screen::Frame;
 pub use screen::State;
