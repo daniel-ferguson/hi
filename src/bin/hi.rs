@@ -107,25 +107,11 @@ fn run() -> Result<(), Box<StdError>> {
 
     let stdin = stdin();
     let mut stdout = stdout().into_raw_mode()?;
-    write!(
-        stdout,
-        "{}{}",
-        termion::clear::All,
-        termion::cursor::Goto(1, 1)
-    )?;
-
-    write!(stdout, "{}", termion::cursor::Hide,)?;
-
     let (width, height) = termion::terminal_size()?;
     let mut screen = Screen::new(&bytes, Frame { width, height });
-
-    stdout.flush()?;
-
-    byte_display::render(&mut stdout, screen.data, &screen);
-    status_bar::render(&mut stdout, &screen, &path);
-    stdout.flush()?;
-
     let context = Context { file_path: &path };
+
+    screen.render(&mut stdout, &context, &CommandPrompt::new())?;
 
     {
         // constrain stdout mutable borrow to event handling loop

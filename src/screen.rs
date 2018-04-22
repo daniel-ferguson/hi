@@ -59,9 +59,9 @@ impl<'a> Screen<'a> {
             scroll_x: 0,
             bytes_per_row: 32,
             data: data,
-            data_frame_dirty: false,
-            prompt_bar_dirty: false,
-            status_bar_dirty: false,
+            data_frame_dirty: true,
+            prompt_bar_dirty: true,
+            status_bar_dirty: true,
             switch_focus_to_prompt: false,
         }
     }
