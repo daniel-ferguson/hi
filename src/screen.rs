@@ -189,8 +189,6 @@ impl<'a> Screen<'a> {
         let data = &self.data[self.offset..len];
 
         self.scroll_y = max_scroll_y(self.data_frame_height() as usize, &data, self.bytes_per_row);
-
-        self.scroll_y = 0;
     }
 
     pub fn prompt(&mut self) {
