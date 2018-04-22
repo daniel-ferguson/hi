@@ -3,7 +3,7 @@ use termion::event::Key;
 pub mod parser;
 pub use self::parser::{Command, CommandParseError as ParseError};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum CommandMachineEvent<'a> {
     Reset,
     Update(&'a str),
@@ -61,7 +61,7 @@ impl CommandPrompt {
 
 #[cfg(test)]
 mod tests {
-    use super::CommandPrompt;
+    use super::{Command, CommandMachineEvent, CommandPrompt};
     use termion::event::Key;
 
     #[test]
@@ -107,5 +107,17 @@ mod tests {
         command.step(Key::Backspace);
         assert_eq!(command.index, 0);
         assert_eq!(command.text, "");
+    }
+
+    #[test]
+    fn it_returns_an_execute_command_on_successful_match() {
+        let mut command = CommandPrompt::new();
+        command.step(Key::Char('y'));
+        command.step(Key::Char(' '));
+        command.step(Key::Char('3'));
+        command.step(Key::Char('2'));
+        let result = command.step(Key::Char('\n'));
+
+        assert_eq!(result, CommandMachineEvent::Execute(Command::ScrollY(32)));
     }
 }
