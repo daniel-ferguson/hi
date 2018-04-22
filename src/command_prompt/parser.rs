@@ -178,8 +178,8 @@ mod tests {
 
     use super::*;
     mod command {
-        use super::{Command, CommandName};
         use super::{command, command_name, usize_digit};
+        use super::{Command, CommandName};
 
         #[test]
         fn parsing_commands() {
@@ -209,7 +209,7 @@ mod tests {
                     b"\tw",
                     b"\nw",
                     b"\r\nw",
-                    b" \r \n w"
+                    b" \r \n w",
                 ]
             );
             assert_parse_ok!(
@@ -226,7 +226,7 @@ mod tests {
                     b"\to",
                     b"\no",
                     b"\r\no",
-                    b" \r \n o"
+                    b" \r \n o",
                 ]
             );
 
