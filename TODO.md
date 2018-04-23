@@ -1,5 +1,5 @@
-- [ ] Extract command bar rendering into a separate function
-- [ ] Fix display when terminal narrower than byte width
+- [ ] Handle SIGWINCH (screen resizes)
+- [x] Fix display when terminal narrower than byte width
 - [x] Fix cursor location in prompt bar after tabs and other non-1 width characters
 - [x] Implement better navigation (jump to line, set bytes per row, page up, page down etc.)
 - [x] Remove Properties struct, unpack into arguments
