@@ -47,7 +47,8 @@ pub mod status_bar {
             "{}{}",
             cursor::Goto(1, status_bar_position.y),
             bar_full,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     fn line_of_spaces(len: usize) -> String {
@@ -108,14 +109,16 @@ pub mod byte_display {
                     "{}{}",
                     cursor::Goto(1, (i + 1) as u16),
                     line.format(view),
-                ).unwrap();
+                )
+                .unwrap();
             } else {
                 write!(
                     screen.out,
                     "{}{}",
                     cursor::Goto(1, (i + 1) as u16),
                     clear::CurrentLine
-                ).unwrap();
+                )
+                .unwrap();
             }
         }
     }
