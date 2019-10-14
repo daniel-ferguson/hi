@@ -10,4 +10,3 @@ termion = "1.4.0"
 
 [dependencies.nom]
 version = "3.2"
-features = ["nightly"]
