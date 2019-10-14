@@ -92,7 +92,7 @@ where
 
 fn run() -> Result<(), Box<StdError>> {
     env_logger::init()?;
-    let path = env::args().nth(1).expect("Usage: hi FILE");
+    let path = env::args().nth(1).ok_or("Usage: hi FILE")?;
     let mut file = fs::File::open(&path)?;
 
     let mut bytes = Vec::new();
