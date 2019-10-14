@@ -47,13 +47,15 @@ impl CommandPrompt {
                 self.index += 1;
                 CommandMachineEvent::Update(&self.text)
             }
-            Key::Backspace => if self.index > 0 {
-                self.index -= 1;
-                self.text.remove(self.index);
-                CommandMachineEvent::Update(&self.text)
-            } else {
-                CommandMachineEvent::Update(&self.text)
-            },
+            Key::Backspace => {
+                if self.index > 0 {
+                    self.index -= 1;
+                    self.text.remove(self.index);
+                    CommandMachineEvent::Update(&self.text)
+                } else {
+                    CommandMachineEvent::Update(&self.text)
+                }
+            }
             _ => CommandMachineEvent::Update(&self.text),
         }
     }
