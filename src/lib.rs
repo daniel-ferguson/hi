@@ -153,6 +153,8 @@ pub mod byte_display {
 }
 
 pub mod line {
+    use std::fmt::Write;
+
     const LOOKUP: [char; 16] = [
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
     ];
@@ -182,9 +184,9 @@ pub mod line {
             self.text.clear();
 
             // translate bytes into hex representations
-            for (i, byte) in bytes.iter().enumerate() {
-                self.text.push(LOOKUP[(byte >> 4) as usize]);
-                self.text.push(LOOKUP[(byte & 0xF) as usize]);
+            for (i, &byte) in bytes.iter().enumerate() {
+                let byte = Byte::new(byte);
+                byte.write(&mut self.text);
                 if i < bytes.len() - 1 {
                     self.text.push(' ');
                 }
@@ -196,6 +198,34 @@ pub mod line {
             }
 
             &self.text
+        }
+    }
+
+    enum Byte {
+        Ascii(u8),
+        Other(u8),
+    }
+
+    impl Byte {
+        fn new(byte: u8) -> Self {
+            if byte >= 32 && byte <= 126 {
+                Byte::Ascii(byte)
+            } else {
+                Byte::Other(byte)
+            }
+        }
+
+        fn write<T: Write>(&self, wtr: &mut T) {
+            match self {
+                Byte::Ascii(byte) => {
+                    wtr.write_char(LOOKUP[(byte >> 4) as usize]).unwrap();
+                    wtr.write_char(LOOKUP[(byte & 0xF) as usize]).unwrap();
+                }
+                Byte::Other(byte) => {
+                    wtr.write_char(LOOKUP[(byte >> 4) as usize]).unwrap();
+                    wtr.write_char(LOOKUP[(byte & 0xF) as usize]).unwrap();
+                }
+            }
         }
     }
 
