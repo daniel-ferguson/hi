@@ -1,8 +1,8 @@
-extern crate env_logger;
-extern crate hi;
+use env_logger;
+
 #[macro_use]
 extern crate log;
-extern crate termion;
+use termion;
 
 use std::env;
 use std::error::Error as StdError;
@@ -45,7 +45,7 @@ where
         &mut self,
         context: &Context,
         event: termion::event::Event,
-    ) -> Result<HandlerStatus, Box<StdError>> {
+    ) -> Result<HandlerStatus, Box<dyn StdError>> {
         let screen = &mut self.screen;
 
         match screen.state {
@@ -89,7 +89,7 @@ where
     }
 }
 
-fn run() -> Result<(), Box<StdError>> {
+fn run() -> Result<(), Box<dyn StdError>> {
     env_logger::init()?;
     let path = env::args().nth(1).ok_or("Usage: hi FILE")?;
     let mut file = fs::File::open(&path)?;
