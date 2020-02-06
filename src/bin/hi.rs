@@ -1,4 +1,3 @@
-#![feature(nll)]
 extern crate env_logger;
 extern crate hi;
 #[macro_use]
