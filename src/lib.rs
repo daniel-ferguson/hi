@@ -1,14 +1,11 @@
 #[macro_use]
-extern crate log;
-#[macro_use]
 extern crate nom;
-extern crate termion;
 
 pub mod command_prompt;
 pub mod context;
 pub mod screen;
-pub use screen::Frame;
-pub use screen::State;
+pub use crate::screen::Frame;
+pub use crate::screen::State;
 
 pub mod status_bar {
     use std::io::Write;

@@ -2,7 +2,7 @@ use std::error::Error as StdError;
 use std::fmt;
 use std::io::Write;
 
-use context::Context;
+use crate::context::Context;
 
 #[derive(Debug, PartialEq)]
 pub enum State {
@@ -325,10 +325,9 @@ impl<'a, T: Write> Screen<'a, T> {
     }
 
     /// Render the current state of Screen
-    pub fn render(&mut self, ctx: &Context) -> Result<(), Box<StdError>> {
-        use byte_display;
-        use status_bar;
-        use termion;
+    pub fn render(&mut self, ctx: &Context) -> Result<(), Box<dyn StdError>> {
+        use crate::byte_display;
+        use crate::status_bar;
 
         if self.data_frame_dirty {
             let len = self.data.len();
@@ -381,7 +380,7 @@ impl<'a, T: Write> Screen<'a, T> {
     ///
     /// This prepares the terminal for being reverted into cooked mode and should be the last
     /// rendering call executed before termion's stdout handle is dropped.
-    pub fn reset(mut self) -> Result<(), Box<StdError>> {
+    pub fn reset(mut self) -> Result<(), Box<dyn StdError>> {
         use termion::cursor;
         write!(self.out, "{}{}", cursor::Goto(1, 1), cursor::Show)?;
         Ok(())
