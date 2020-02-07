@@ -263,32 +263,32 @@ pub mod line {
 
     #[cfg(test)]
     mod tests {
-        use super::Line;
+        use super::{Line, Mode};
 
         #[test]
         fn format_represents_bytes_as_hex_values() {
-            let mut line = Line::new(2);
+            let mut line = Line::new(2, Mode::Hex);
 
             assert_eq!(line.format(&[129]), "81");
         }
 
         #[test]
         fn format_inserts_spaces_between_values() {
-            let mut line = Line::new(5);
+            let mut line = Line::new(5, Mode::Hex);
 
             assert_eq!(line.format(&[129, 0]), "81 00");
         }
 
         #[test]
         fn format_pads_line_with_spaces() {
-            let mut line = Line::new(10);
+            let mut line = Line::new(10, Mode::Hex);
 
             assert_eq!(line.format(&[129, 0]), "81 00     ");
         }
 
         #[test]
         fn format_works_when_given_an_empty_slice() {
-            let mut line = Line::new(0);
+            let mut line = Line::new(0, Mode::Hex);
 
             assert_eq!(line.format(&[]), "");
         }
@@ -296,7 +296,7 @@ pub mod line {
         #[test]
         #[should_panic]
         fn format_panics_if_given_more_bytes_than_there_is_line_space() {
-            Line::new(4).format(&[111, 222, 000]);
+            Line::new(4, Mode::Hex).format(&[111, 222, 000]);
         }
     }
 }
