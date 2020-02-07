@@ -56,6 +56,7 @@ where
                 Event::Key(Key::Char('j')) => screen.down(),
                 Event::Key(Key::Char('k')) => screen.up(),
                 Event::Key(Key::Char(':')) => screen.prompt(),
+                Event::Key(Key::Char('f')) => screen.toggle_text_display_mode(),
                 Event::Key(Key::Ctrl('d')) | Event::Key(Key::PageDown) => screen.page_down(),
                 Event::Key(Key::Ctrl('u')) | Event::Key(Key::PageUp) => screen.page_up(),
                 Event::Key(Key::Home) => screen.start(),
