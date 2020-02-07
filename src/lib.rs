@@ -1,3 +1,5 @@
+#![deny(unused_imports)]
+
 #[macro_use]
 extern crate nom;
 
@@ -67,7 +69,7 @@ pub mod status_bar {
 pub mod byte_display {
     use std::io::Write;
 
-    use super::line::{Line, Mode};
+    use super::line::Line;
     use super::screen::Screen;
     use termion::{clear, cursor};
 
