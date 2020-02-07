@@ -3,6 +3,7 @@ use std::fmt;
 use std::io::Write;
 
 use crate::context::Context;
+use crate::line::Mode;
 
 #[derive(Debug, PartialEq)]
 pub enum State {
@@ -43,6 +44,7 @@ where
     pub data: &'a [u8],
     pub out: T,
     prompt_text: String,
+    pub text_display_mode: Mode,
 }
 
 pub struct Point {
@@ -72,6 +74,7 @@ impl<'a, T: Write> Screen<'a, T> {
             switch_focus_to_prompt: false,
             out,
             prompt_text: String::with_capacity(default_prompt_capacity),
+            text_display_mode: Mode::Hex,
         }
     }
 
@@ -374,6 +377,17 @@ impl<'a, T: Write> Screen<'a, T> {
         self.clear_dirty_flags();
         self.out.flush()?;
         Ok(())
+    }
+
+    /// Toggle between text display modes
+    ///
+    /// Either print ASCII printable range characters or display all bytes as hex values.
+    pub fn toggle_text_display_mode(&mut self) {
+        match self.text_display_mode {
+            Mode::Ascii => self.text_display_mode = Mode::Hex,
+            Mode::Hex => self.text_display_mode = Mode::Ascii,
+        }
+        self.data_frame_dirty = true;
     }
 
     /// Clear the screen and reset the cursor position

@@ -67,7 +67,7 @@ pub mod status_bar {
 pub mod byte_display {
     use std::io::Write;
 
-    use super::line::Line;
+    use super::line::{Line, Mode};
     use super::screen::Screen;
     use termion::{clear, cursor};
 
@@ -79,7 +79,7 @@ pub mod byte_display {
         let main_panel_height = screen.data_frame_height();
         let mut rows = data.chunks(bytes_per_row).skip(scroll);
 
-        let mut line = Line::new(screen.data_frame_width() as usize);
+        let mut line = Line::new(screen.data_frame_width() as usize, screen.text_display_mode);
 
         for i in 0..main_panel_height {
             if let Some(row) = rows.next() {
@@ -159,17 +159,33 @@ pub mod line {
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
     ];
 
+    #[derive(Copy, Clone, Debug)]
+    pub enum Mode {
+        Ascii,
+        Hex,
+    }
+
     pub struct Line {
         length: usize,
         text: String,
+        mode: Mode,
     }
 
     impl Line {
-        pub fn new(length: usize) -> Line {
+        pub fn new(length: usize, mode: Mode) -> Line {
             Line {
-                length: length,
+                length,
+                mode,
                 text: String::with_capacity(length),
             }
+        }
+
+        pub fn ascii(&mut self) {
+            self.mode = Mode::Ascii;
+        }
+
+        pub fn hex(&mut self) {
+            self.mode = Mode::Hex;
         }
 
         pub fn format(&mut self, bytes: &[u8]) -> &str {
@@ -186,7 +202,10 @@ pub mod line {
             // translate bytes into hex representations
             for (i, &byte) in bytes.iter().enumerate() {
                 let byte = Byte::new(byte);
-                byte.write(&mut self.text);
+                match self.mode {
+                    Mode::Ascii => byte.write_ascii(&mut self.text),
+                    Mode::Hex => byte.write(&mut self.text),
+                }
                 if i < bytes.len() - 1 {
                     self.text.push(' ');
                 }
@@ -212,6 +231,19 @@ pub mod line {
                 Byte::Ascii(byte)
             } else {
                 Byte::Other(byte)
+            }
+        }
+
+        fn write_ascii<T: Write>(&self, wtr: &mut T) {
+            match self {
+                Byte::Ascii(byte) => {
+                    wtr.write_char('.').unwrap();
+                    wtr.write_char((*byte).into()).unwrap();
+                }
+                Byte::Other(byte) => {
+                    wtr.write_char(LOOKUP[(byte >> 4) as usize]).unwrap();
+                    wtr.write_char(LOOKUP[(byte & 0xF) as usize]).unwrap();
+                }
             }
         }
 
