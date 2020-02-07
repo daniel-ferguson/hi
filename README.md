@@ -33,5 +33,5 @@ Supported commands are:
 
     o(ffset)  N  # set offset from beginning of file
     w(idth)   N  # set number of horizontal bytes to display
-    s(crollx) N  # scroll to a certain row
-    s(crolly) N  # scroll to a certain column
+    scroll(x) N  # scroll to a certain row
+    scroll(y) N  # scroll to a certain column
